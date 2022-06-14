@@ -13,6 +13,10 @@ class MainController extends Controller
         $user = $this->getUser();
         $appInfo = array(
             'name' => $project->getName(),
+            'alias' => $project->getAlias(),
+            'desc' => $project->getDescription(),
+            'owner' => $project->getOwner(),
+            'year' => $project->getYear(),
             'user' => $user ? array('id' => 'user') : null,
         );
 
