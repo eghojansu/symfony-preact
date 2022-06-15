@@ -1,7 +1,5 @@
 import { Alert } from './dialog'
 import useForm from '../lib/form'
-import { clsx } from '../lib/common'
-import { useEffect } from 'preact/hooks'
 
 export default ({
   app,
@@ -9,15 +7,16 @@ export default ({
 }) => {
   const {
     handleSubmit,
+    setValue,
     error,
     state: {
-      account,
+      username,
       password,
       remember,
       processing,
       message,
     } } = useForm({
-    account: {
+    username: {
       clsa: 'control-start',
       label: 'Username or email',
       input: {
@@ -38,7 +37,11 @@ export default ({
         class: null,
       },
     },
-  }, onSubmit)
+  }, async values => {
+    await onSubmit(values)
+
+    setValue('password', '', true)
+  })
 
   return (
     <div class="min-vh-100 d-flex justify-content-center align-items-center">
@@ -48,9 +51,9 @@ export default ({
         {(error || message) && <Alert message={error || message} />}
 
         <div class="form-floating">
-          <input {...account.input} />
-          <label for={account.input.id}>{account.label}</label>
-          {account.error && <div class="invalid-feedback mb-2">{account.error}</div>}
+          <input {...username.input} />
+          <label for={username.input.id}>{username.label}</label>
+          {username.error && <div class="invalid-feedback mb-2">{username.error}</div>}
         </div>
         <div class="form-floating">
           <input {...password.input} />

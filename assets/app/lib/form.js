@@ -52,21 +52,11 @@ export default (fields, onSubmit) => {
     ...values,
     [key]: !state[key].check || state[key].input.checked ? state[key].input.value : '',
   }), {}), [state])
-  const handleChange = (name, e) => stateSet(state => {
+  const handleChange = (name, e) => {
     const { target: { value, validationMessage } } = e
-    const update = {
-      ...state[name],
-      input: {
-        ...state[name].input,
-        ...(state[name].check ? { checked: !state[name].input.checked } : {}),
-        value,
-        class: clsx(state[name].class, validationMessage ? 'is-invalid' : '')
-      },
-      error: validationMessage,
-    }
 
-    return { ...state, [name]: update, clean: false }
-  })
+    setValue(name, value, false, validationMessage)
+  }
   const handleSubmit = async event => {
     event.preventDefault()
 
@@ -90,6 +80,20 @@ export default (fields, onSubmit) => {
 
     setProcessing(false)
   }
+  const setValue = (name, value, clean = false, error = '') => stateSet(state => {
+    const update = {
+      ...state[name],
+      input: {
+        ...state[name].input,
+        ...(state[name].check ? { checked: !state[name].input.checked } : {}),
+        value,
+        class: clsx(state[name].class, error ? 'is-invalid' : '')
+      },
+      error,
+    }
+
+    return { ...state, [name]: update, clean }
+  })
   const setErrors = errors => stateSet(state => {
     const updates = Object.entries(errors).filter(([key]) => keys.includes(key)).reduce((updates, [key, err]) => {
       const error = clsa(err).join(', ')
@@ -130,6 +134,7 @@ export default (fields, onSubmit) => {
     error,
     values,
     handleSubmit,
+    setValue,
     setErrors,
     setMessage,
   }

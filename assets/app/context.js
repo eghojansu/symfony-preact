@@ -1,8 +1,10 @@
 import { createContext } from 'preact'
-import { useContext, useMemo, useRef, useState } from 'preact/hooks'
+import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { createHashHistory } from 'history'
-import FormLogin from './components/form-login'
 import axios from 'axios'
+import FormLogin from './components/form-login'
+import notify from './lib/notify'
+import { createElement } from './lib/common'
 
 const AppContext = createContext()
 
@@ -28,6 +30,9 @@ export const withContext = (Component, granted = []) => props => {
 
 export default ({ children }) => {
   const [app] = useState(window.app)
+  const [state, stateSet] = useState({
+    fetching: false,
+  })
   const history = useRef(createHashHistory())
   const isGuest = useMemo(() => !app?.user, [app])
   const isLogin = useMemo(() => !!app?.user, [app])
@@ -37,30 +42,57 @@ export default ({ children }) => {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
+      notify: true,
     })
+    req.interceptors.request.use(
+      config => {
+        stateChange('fetching', true)
+
+        return config
+      },
+    )
     req.interceptors.response.use(
-      origin => ({
-        success: origin.data?.success,
-        title: origin.data?.title || origin.statusText,
-        message: origin.data?.detail || origin.data?.message || 'OK',
-        data: origin.data?.data || null,
-        origin,
-      }),
-      origin => Promise.resolve({
-        success: false,
-        title: origin.response?.data?.title || origin.response.statusText,
-        message: origin.response?.data?.detail || 'Unknown error',
-        data: origin.response?.data?.data || null,
-        origin,
-      })
+      origin => {
+        stateChange('fetching', false)
+
+        return {
+          success: origin.data?.success,
+          title: origin.data?.title || origin.statusText,
+          message: origin.data?.detail || origin.data?.message || 'OK',
+          data: origin.data?.data || null,
+          origin,
+        }
+      },
+      origin => {
+        const response = {
+          success: false,
+          title: origin.response?.data?.title || origin.response.statusText,
+          message: origin.response?.data?.detail || origin.response?.data?.message || 'Unknown error',
+          data: origin.response?.data?.data || null,
+          origin,
+        }
+
+        stateChange('fetching', false)
+
+        if (origin.config.notify) {
+          notify(response.message, false, { title: response.title })
+        }
+
+        return Promise.resolve(response)
+      },
     )
 
     return req
   })()
+  const stateChange = (name, value) => stateSet(state => ({
+    ...state,
+    [name]:
+    'function' === typeof value ? value(state[name]) : value,
+  }))
   const login = async data => {
     const response = await request.post('/api/login', data)
 
-    console.log(response)
+    return response
   }
   const context = {
     app,
@@ -70,6 +102,26 @@ export default ({ children }) => {
     request,
     login,
   }
+
+  useEffect(() => {
+    let pb = document.getElementById('top-state')
+
+    if (!pb) {
+      pb = createElement(
+        'div',
+        { class: 'top-state d-none', id: 'top-state' },
+        createElement('div', { class: 'top-state-value' }),
+      )
+
+      document.body.appendChild(pb)
+    }
+
+    if (state.fetching) {
+      pb.classList.remove('d-none')
+    } else {
+      pb.classList.add('d-none')
+    }
+  }, [state.fetching])
 
   return <AppContext.Provider value={context} children={children} />
 }
