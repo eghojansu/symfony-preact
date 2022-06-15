@@ -1,5 +1,6 @@
 import { Alert } from './dialog'
 import useForm from '../lib/form'
+import notify from '../lib/notify'
 
 export default ({
   app,
@@ -38,9 +39,13 @@ export default ({
       },
     },
   }, async values => {
-    await onSubmit(values)
+    const { success } = await onSubmit(values)
 
     setValue('password', '', true)
+
+    if (success) {
+      notify('Welcome back', true)
+    }
   })
 
   return (

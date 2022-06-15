@@ -2,7 +2,7 @@
 
 namespace App;
 
-class Project
+class Project implements \JsonSerializable
 {
     private $name = 'MyApp';
     private $alias = 'MyApp';
@@ -10,6 +10,17 @@ class Project
     private $year = 2022;
     private $owner = 'My Company, Inc';
     private $homepage = 'http://mycompany.com';
+
+    public function jsonSerialize(): mixed
+    {
+        return array(
+            'name' => $this->getName(),
+            'alias' => $this->getAlias(),
+            'desc' => $this->getDescription(),
+            'owner' => $this->getOwner(),
+            'year' => $this->getYear(),
+        );
+    }
 
     public function getName(): string
     {

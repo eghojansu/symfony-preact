@@ -2,6 +2,8 @@ import { createContext } from 'preact'
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { createHashHistory } from 'history'
 import axios from 'axios'
+import Cookies from 'js-cookie'
+import localforage from 'localforage'
 import FormLogin from './components/form-login'
 import notify from './lib/notify'
 import { createElement } from './lib/common'
@@ -29,13 +31,15 @@ export const withContext = (Component, granted = []) => props => {
 }
 
 export default ({ children }) => {
-  const [app] = useState(window.app)
   const [state, stateSet] = useState({
     fetching: false,
+    user: null,
+    menu: null,
+    token: null,
   })
   const history = useRef(createHashHistory())
-  const isGuest = useMemo(() => !app?.user, [app])
-  const isLogin = useMemo(() => !!app?.user, [app])
+  const isGuest = useMemo(() => !state.token, [state.token])
+  const isLogin = useMemo(() => !!state.token, [state.token])
   const request = (() => {
     const req = axios.create({
       headers: {
@@ -43,20 +47,25 @@ export default ({ children }) => {
         'Content-Type': 'application/json',
       },
       notify: true,
+      anonymous: false,
     })
     req.interceptors.request.use(
       config => {
-        stateChange('fetching', true)
+        stateUp({ fetching: true })
+
+        if (!config.anonymous && state.token) {
+          config.headers['Authorization'] = `Bearer ${state.token}`
+        }
 
         return config
       },
     )
     req.interceptors.response.use(
       origin => {
-        stateChange('fetching', false)
+        stateUp({ fetching: false })
 
         return {
-          success: origin.data?.success,
+          success: origin.data?.success || true,
           title: origin.data?.title || origin.statusText,
           message: origin.data?.detail || origin.data?.message || 'OK',
           data: origin.data?.data || null,
@@ -72,9 +81,13 @@ export default ({ children }) => {
           origin,
         }
 
-        stateChange('fetching', false)
+        stateUp({ fetching: false })
 
-        if (origin.config.notify) {
+        if (state.token && origin.response.status === 401) {
+          logout(false, response.message, false, {
+            title: response.title,
+          })
+        } else if (origin.config.notify) {
           notify(response.message, false, { title: response.title })
         }
 
@@ -84,18 +97,51 @@ export default ({ children }) => {
 
     return req
   })()
-  const stateChange = (name, value) => stateSet(state => ({
+  const stateUp = (updates = {}) => stateSet(state => ({
     ...state,
-    [name]:
-    'function' === typeof value ? value(state[name]) : value,
+    ...updates,
   }))
+  const logout = async (notifyServer = true, message = null, success = true, options = {}) => {
+    const withMessage = message || 'You have been logged out'
+
+    if (notifyServer) {
+      // what?
+    } else {
+      notify(withMessage, success, options)
+    }
+
+    await localforage.removeItem('__menu')
+    Cookies.remove('__cookie')
+    stateUp({ user: null, token: null, menu: null })
+  }
   const login = async data => {
     const response = await request.post('/api/login', data)
+    const { token } = response?.data || {}
+
+    if (token) {
+      Cookies.set('__cookie', token)
+      stateUp({ token })
+    }
 
     return response
   }
+  const loadMenu = async () => {
+    const { data: menu } = await request.get('/api/menu?roots=top,db')
+
+    await localforage.setItem('__menu', menu)
+    stateUp({ menu })
+  }
+  const initialize = async () => {
+    const menu = await localforage.getItem('__menu')
+    const token = Cookies.get('__cookie')
+
+    if (token) {
+      stateUp({ token, menu })
+    }
+  }
   const context = {
-    app,
+    ...state,
+    app: window.app,
     history,
     isGuest,
     isLogin,
@@ -122,6 +168,12 @@ export default ({ children }) => {
       pb.classList.add('d-none')
     }
   }, [state.fetching])
+  useEffect(() => {
+    state.token && !state.menu && loadMenu()
+  }, [state.token, state.menu])
+  useEffect(() => {
+    initialize()
+  }, [])
 
   return <AppContext.Provider value={context} children={children} />
 }

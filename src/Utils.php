@@ -17,7 +17,7 @@ class Utils
 
     public static function split(string|array|null $str, string $pattern = null): array
     {
-        return array_map(
+        return is_array($str) ? $str : array_map(
             'trim',
             preg_split($pattern ?? '/[,;|]/', $str ?? '', 0, PREG_SPLIT_NO_EMPTY),
         );
