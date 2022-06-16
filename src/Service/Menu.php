@@ -23,10 +23,9 @@ class Menu
 
         return Utils::reduce(
             $roots,
-            fn (array $menu, string $root) => $menu + array(
+            fn (array|null $menu, string $root) => array_merge($menu ?? array(), array(
                 $root => $this->build($root, $rows, $activable),
-            ),
-            array(),
+            )),
         );
     }
 
@@ -50,7 +49,7 @@ class Menu
                 $items = $this->build($row->getId(), $rows, $activable);
                 $active = $activable && $this->active($row, $items);
 
-                $menu[] = array(
+                $menu[$row->getId()] = array(
                     'id' => $row->getId(),
                     'url' => $row->getPath(),
                     'text' => $row->getName(),

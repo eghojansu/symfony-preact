@@ -67,3 +67,15 @@ export const createElement = (tag, props, ...children) => {
 
   return element
 }
+export const onEvent = (type, selector, fun, root) => {
+  const listener = event => (
+    (event.target.matches(selector) || event.target.closest(selector))
+    && fun(event)
+  )
+
+  (root || document).addEventListener(type, listener)
+
+  return () => {
+    (root || document).removeEventListener(type, listener)
+  }
+}

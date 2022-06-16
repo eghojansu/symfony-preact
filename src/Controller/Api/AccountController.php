@@ -6,8 +6,8 @@ use App\Service\Menu;
 use App\Utils;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/api')]
-class MainController extends Controller
+#[Route('/api/account')]
+class AccountController extends Controller
 {
     #[Route('', methods: 'GET')]
     public function home()

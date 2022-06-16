@@ -5,7 +5,7 @@ import axios from 'axios'
 import Cookies from 'js-cookie'
 import localforage from 'localforage'
 import FormLogin from './components/form-login'
-import notify from './lib/notify'
+import notify, { confirm } from './lib/notify'
 import { createElement } from './lib/common'
 
 const AppContext = createContext()
@@ -62,22 +62,25 @@ export default ({ children }) => {
     )
     req.interceptors.response.use(
       origin => {
+        const data = origin.data || {}
+
         stateUp({ fetching: false })
 
         return {
-          success: origin.data?.success || true,
-          title: origin.data?.title || origin.statusText,
-          message: origin.data?.detail || origin.data?.message || 'OK',
-          data: origin.data?.data || null,
+          success: 'success' in data ? data.success : true,
+          title: data.title || origin.statusText,
+          message: data.detail || data.message || 'Request successful',
+          data: 'data' in data ? data.data : data,
           origin,
         }
       },
       origin => {
+        const data = origin.response.data || {}
         const response = {
           success: false,
-          title: origin.response?.data?.title || origin.response.statusText,
-          message: origin.response?.data?.detail || origin.response?.data?.message || 'Unknown error',
-          data: origin.response?.data?.data || null,
+          title: data.title || origin.response.statusText,
+          message: data.detail || data.message || 'Unknown error',
+          data: 'data' in data ? data.data : data,
           origin,
         }
 
@@ -102,16 +105,31 @@ export default ({ children }) => {
     ...updates,
   }))
   const logout = async (notifyServer = true, message = null, success = true, options = {}) => {
-    const withMessage = message || 'You have been logged out'
+    let doNotify = true
+    let withMessage = message || 'You have been logged out'
 
     if (notifyServer) {
-      // what?
-    } else {
-      notify(withMessage, success, options)
+      const { isConfirmed, value: { success, message } = {} } = await confirm(
+        () => request.post('/api/account/logout'),
+      )
+
+      if (!isConfirmed) {
+        return
+      }
+
+      if (message) {
+        withMessage = message
+      }
+
+      doNotify = success
+    }
+
+    if (doNotify) {
+      notify(withMessage, withSuccess, options)
     }
 
     await localforage.removeItem('__menu')
-    Cookies.remove('__cookie')
+    Cookies.remove('__token')
     stateUp({ user: null, token: null, menu: null })
   }
   const login = async data => {
@@ -119,24 +137,66 @@ export default ({ children }) => {
     const { token } = response?.data || {}
 
     if (token) {
-      Cookies.set('__cookie', token)
+      Cookies.set('__token', token)
       stateUp({ token })
     }
 
     return response
   }
   const loadMenu = async () => {
-    const { data: menu } = await request.get('/api/menu?roots=top,db')
+    const { data } = await request.get('/api/account/menu?roots=top,db')
+    const norm = items => Object.entries(items).map(([, item]) => Array.isArray(item.items) ? item : ({
+      ...item,
+      items: item.items ? norm(item.items) : [],
+    }))
+    const menu = Object.fromEntries(
+      Object.entries(data).map(([root, menu]) => [root, norm(menu)]),
+    )
 
     await localforage.setItem('__menu', menu)
     stateUp({ menu })
   }
   const initialize = async () => {
     const menu = await localforage.getItem('__menu')
-    const token = Cookies.get('__cookie')
+    const token = Cookies.get('__token')
 
     if (token) {
       stateUp({ token, menu })
+    }
+  }
+  const registerEventListeners = () => {
+    const clickHandlers = [
+      ['[data-action=logout]', () => logout(), true],
+      ['.offcanvas a', event => {
+        const href = event.target.getAttribute('href')
+
+        if (href.startsWith('#')) {
+          return
+        }
+
+        const offElement = event.target.closest('.offcanvas')
+        const offInstance = bootstrap.Offcanvas.getInstance(offElement)
+
+        offInstance.hide()
+      }],
+    ]
+    const handleClick = event => {
+      const doPrevent = () => {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      clickHandlers.forEach(([selector, handle, prevent = false]) => {
+        if (event.target.matches(selector) || event.target.closest(selector)) {
+          prevent && doPrevent()
+          handle(event, doPrevent)
+        }
+      })
+    }
+
+    document.addEventListener('click', handleClick)
+
+    return () => {
+      document.removeEventListener('click', handleClick)
     }
   }
   const context = {
@@ -147,6 +207,7 @@ export default ({ children }) => {
     isLogin,
     request,
     login,
+    logout,
   }
 
   useEffect(() => {
@@ -172,7 +233,13 @@ export default ({ children }) => {
     state.token && !state.menu && loadMenu()
   }, [state.token, state.menu])
   useEffect(() => {
+    const removeListeners = registerEventListeners()
+
     initialize()
+
+    return () => {
+      removeListeners()
+    }
   }, [])
 
   return <AppContext.Provider value={context} children={children} />
