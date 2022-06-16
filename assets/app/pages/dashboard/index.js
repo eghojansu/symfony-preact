@@ -1,9 +1,14 @@
+import { lazy, Suspense } from 'preact/compat'
 import Router from 'preact-router'
-import { withContext } from '../../context'
-import { Nav, ListGroup } from '../../components/tree'
-import { IconSpinner } from '../../components/icon'
+import { withContext } from '@app/context'
+import { Nav, ListGroup } from '@app/components/tree'
+import { IconSpinner } from '@app/components/icon'
+import Loading from '@app/components/loading'
+import { pathPrefix } from '@app/lib/common'
 import HomePage from './home'
 import NotFoundPage from './404'
+
+const AccountPage = lazy(() => import('./account'))
 
 export default withContext(({
   ctx: {
@@ -13,8 +18,7 @@ export default withContext(({
   path,
   url,
 }) => {
-  const cut = path.indexOf(':')
-  const prefix = cut < 0 ? path : path.slice(0, cut - 1)
+  const prefix = pathPrefix(path)
 
   return (
     <>
@@ -53,10 +57,13 @@ export default withContext(({
         </div>
       </nav>
       <main class="p-3">
-        <Router>
-          <HomePage path={prefix} />
-          <NotFoundPage default />
-        </Router>
+        <Suspense loading={<Loading />}>
+          <Router>
+            <HomePage path={prefix} />
+            <AccountPage path={`${prefix}/account`} />
+            <NotFoundPage default />
+          </Router>
+        </Suspense>
       </main>
     </>
   )

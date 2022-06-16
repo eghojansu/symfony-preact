@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./assets/app",
+    "jsx": "react",
+    "paths": {
+      "@app/": ["./assets/app"]
+    }
+  }
+}

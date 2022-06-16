@@ -79,3 +79,4 @@ export const onEvent = (type, selector, fun, root) => {
     (root || document).removeEventListener(type, listener)
   }
 }
+export const pathPrefix = path => path.indexOf(':') < 0 ? path : path.slice(0, path.indexOf(':') - 1)

@@ -1,4 +1,4 @@
-import { withContext } from '../context'
+import { withContext } from '@app/context'
 
 export default withContext(({
   ctx: {

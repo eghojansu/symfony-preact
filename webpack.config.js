@@ -1,3 +1,4 @@
+const path = require('path')
 const Encore = require('@symfony/webpack-encore')
 
 // Manually configure the runtime environment if not already configured yet by the "encore" command.
@@ -52,6 +53,7 @@ Encore
         }])
     })
     .addAliases({
+        "@app": path.resolve(__dirname, 'assets/app'),
         "react": "preact/compat",
         "react-dom/test-utils": "preact/test-utils",
         "react-dom": "preact/compat", // Must be below test-utils

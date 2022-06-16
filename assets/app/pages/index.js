@@ -1,8 +1,8 @@
 import { Suspense, lazy } from 'preact/compat'
 import Router from 'preact-router'
-import { withContext } from '../context'
+import { withContext } from '@app/context'
+import Loading from '@app/components/loading'
 import HomePage from './home'
-import LoadingPage from './loading'
 import NotFoundPage from './404'
 
 const DashboardPage = lazy(() => import('./dashboard'))
@@ -13,7 +13,7 @@ export default withContext(({
   },
 }) => {
   return (
-    <Suspense fallback={<LoadingPage />}>
+    <Suspense fallback={<Loading />}>
       <Router history={history.current}>
         <HomePage path="/" />
         <DashboardPage path="/dashboard/:rest*" />
