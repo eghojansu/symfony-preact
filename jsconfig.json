@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "./assets/app",
+    "baseUrl": "./assets",
     "jsx": "react",
     "paths": {
       "@app/": ["./assets/app"]

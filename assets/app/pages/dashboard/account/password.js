@@ -5,7 +5,7 @@ export default withContext(({
 }) => {
   return (
     <div>
-      Account
+      Password
     </div>
   )
 })

@@ -48,6 +48,7 @@ Encore
 
     .configureBabel(config => {
         config.plugins.push('@babel/plugin-proposal-class-properties')
+        config.plugins.push('@babel/plugin-transform-react-jsx-source')
         config.plugins.push(["@babel/plugin-transform-react-jsx", {
             runtime: 'automatic',
         }])

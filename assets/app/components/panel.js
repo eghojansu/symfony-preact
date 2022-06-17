@@ -1,10 +1,14 @@
 import { clsx } from '../lib/common'
+import { Nav } from './tree'
+import { Toolbar } from './action'
 
 export default ({
   title,
-  clsa,
+  class: clsa,
   items,
+  toolbars,
   children,
+  activeUrl,
 }) => {
   return (
     <div class={clsx('card', clsa)}>
@@ -12,21 +16,18 @@ export default ({
         <div class="row">
           {title && (
             <div class="col col-md-6">
-              <h1 class="fs-5 pb-3">{title}</h1>
+              <h1 class={clsx('fs-5', items && 'pb-3')}>{title}</h1>
+            </div>
+          )}
+          {toolbars && (
+            <div class="col col-md-6">
+              <Toolbar {...toolbars} />
             </div>
           )}
         </div>
-        <ul class="nav nav-tabs card-header-tabs">
-          <li class="nav-item">
-            <a class="nav-link active" href="#">Active</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">Link</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link disabled">Disabled</a>
-          </li>
-        </ul>
+        {items && (
+          <Nav items={items} activeUrl={activeUrl} options={{ clsa: 'nav-tabs card-header-tabs' }} />
+        )}
       </div>
       <div class="card-body">{children}</div>
     </div>

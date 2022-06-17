@@ -1,4 +1,4 @@
-import { caseKebab, clsx } from '../lib/common'
+import { caseKebab, clsx, random } from '../lib/common'
 import { IconLabel } from './icon'
 
 const activeChecker = activeUrl => item => item?.url && item.url === activeUrl
@@ -48,8 +48,8 @@ export const NavDropdown = ({
 
   return (
     <ul {...dropdownAttr}>
-      {items.map(item => (<NavDropdownItem
-        key={item.id}
+      {items.map((item, idx) => (<NavDropdownItem
+        key={item.id || idx}
         item={item}
         activeClass={activeClass}
         activeUrl={activeUrl} />
@@ -66,7 +66,7 @@ const NavItem = ({ item, activeUrl, options = {} }) => {
     ...dropdownOptions
   } = options
   const {
-    id,
+    id = random(6),
     url,
     text,
     icon,
@@ -121,9 +121,9 @@ export const Nav = ({ items, activeUrl, options = {} }) => {
 
   return (
     <ul class={clsx(rootClass, clsa)}>
-      {items.map(item => (
+      {items.map((item, idx) => (
         <NavItem
-          key={item.id}
+          key={item.id || idx}
           item={item}
           activeUrl={activeUrl}
           options={{ activeClass, ...dropdown }} />
@@ -190,7 +190,7 @@ export const ListGroup = ({
   id,
   items,
   flush,
-  clsa,
+  class: clsa,
   activeUrl,
   activeClass,
 }) => {

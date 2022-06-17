@@ -1,12 +1,11 @@
-import { lazy, Suspense } from 'preact/compat'
 import Router from 'preact-router'
+import { lazy, Suspense } from 'preact/compat'
 import { withContext } from '@app/context'
 import { Nav, ListGroup } from '@app/components/tree'
 import { IconSpinner } from '@app/components/icon'
-import Loading from '@app/components/loading'
+import { LoadingPage, NotFoundPage } from '@app/components/fallback'
 import { pathPrefix } from '@app/lib/common'
 import HomePage from './home'
-import NotFoundPage from './404'
 
 const AccountPage = lazy(() => import('./account'))
 
@@ -57,10 +56,10 @@ export default withContext(({
         </div>
       </nav>
       <main class="p-3">
-        <Suspense loading={<Loading />}>
+        <Suspense loading={<LoadingPage />}>
           <Router>
             <HomePage path={prefix} />
-            <AccountPage path={`${prefix}/account`} />
+            <AccountPage path={`${prefix}/account/:rest*`} />
             <NotFoundPage default />
           </Router>
         </Suspense>

@@ -1,3 +1,5 @@
+// TODO: strip on production
+import 'preact/debug'
 import { render } from 'preact'
 import { useEffect } from 'preact/hooks'
 import AppProvider from './context'
