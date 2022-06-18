@@ -1,7 +1,7 @@
 import Router from 'preact-router'
 import { Suspense, lazy } from 'preact/compat'
 import { pathPrefix } from '@app/lib/common'
-import { LoadingPage, NotFoundPage } from '@app/components/fallback'
+import { WaitingPage, NotFoundPage } from '@app/components/fallback'
 import Panel from '@app/components/panel'
 import HomePage from './home'
 
@@ -22,7 +22,7 @@ export default ({ path, url }) => {
 
   return (
     <Panel title="Account" activeUrl={url} items={items}>
-      <Suspense loading={<LoadingPage />}>
+      <Suspense loading={<WaitingPage />}>
         <Router>
           <HomePage path={prefix} />
           <PasswordPage path={`${prefix}/password`} />

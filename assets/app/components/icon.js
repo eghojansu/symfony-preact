@@ -1,8 +1,15 @@
 import { clsx } from '../lib/common'
 
-export const IconLabel = ({ text, icon }) => (
+export const IconLabel = ({ text, icon, processing }) => (
   <>
-    {icon && <i class={clsx(`bi-${icon}`, text && 'me-2')}></i>}
+    {processing ? (
+      <span class={clsx(
+        'spinner-grow spinner-grow-sm',
+        text && 'me-2',
+      )} role="status"></span>
+    ) : (
+      icon ? <i class={clsx(`bi-${icon}`, text && 'me-2')}></i> : null
+    )}
     {text}
   </>
 )

@@ -1,4 +1,4 @@
-import { createContext } from 'preact'
+import { Component, createContext } from 'preact'
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { createHashHistory } from 'history'
 import axios from 'axios'
@@ -23,6 +23,10 @@ export const useAppContext = () => {
 export const withContext = (Component, granted = []) => props => {
   const ctx = useAppContext()
 
+  if (ctx.loading) {
+    return null
+  }
+
   if (granted && ctx.isGuest) {
     return <FormLogin app={ctx.app} onSubmit={ctx.login} />
   }
@@ -30,9 +34,22 @@ export const withContext = (Component, granted = []) => props => {
   return <Component ctx={ctx} {...props} />
 }
 
+export const withUser = (Component, granted = []) => withContext(
+  props => {
+    if (!props.ctx.userFetched) {
+      return <div>Loading user</div>
+    }
+
+    return <Component {...props} />
+  },
+  granted,
+)
+
 export default ({ children }) => {
   const [state, stateSet] = useState({
     fetching: false,
+    loading: true,
+    userFetched: false,
     user: null,
     menu: null,
     token: null,
@@ -163,6 +180,8 @@ export default ({ children }) => {
     if (token) {
       stateUp({ token, menu })
     }
+
+    stateUp({ loading: false })
   }
   const registerEventListeners = () => {
     const clickHandlers = [

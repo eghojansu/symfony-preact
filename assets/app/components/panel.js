@@ -1,6 +1,6 @@
 import { clsx } from '../lib/common'
 import { Nav } from './tree'
-import { Toolbar } from './action'
+import { Toolbar } from './button'
 
 export default ({
   title,

@@ -28,9 +28,8 @@ export const Group = ({
   dropdowns,
   dropdownLabel = 'Toggle dropdown',
   variant = 'secondary',
-  ...props
+  ...actionProps
 }) => {
-  const last = items.length
   const attr = {
     class: clsx('btn-group', groupClass),
     role: 'group',
@@ -39,56 +38,43 @@ export const Group = ({
 
   return (
     <div {...attr}>
-      <Action {...{ class: clsa, variant, ...props }} />
+      <Action {...{ class: clsa, variant, ...actionProps }} />
+      {(items || []).map((item, idx) => (<Action key={item.id || idx} {...item} />))}
       {split && (
         <button type="button" class={clsx('btn', `btn-${variant}`, 'dropdown-toggle dropdown-toggle-split', clsa)} data-bs-toggle="dropdown" aria-expanded="false">
           <span class="visually-hidden">{dropdownLabel}</span>
         </button>
       )}
-      {(items || []).map((item, idx) => (<Action key={item.id || idx} {...item} />))}
       {dropdowns && <NavDropdown {...dropdowns} />}
     </div>
   )
 }
 
-const Action = ({
+export const Action = ({
+  url,
   text,
   icon,
   class: clsa,
-  url,
   onClick,
-  dropdown,
-  iconOnly,
+  disabled,
   processing,
-  processingText = 'Loading...',
   type = 'button',
   variant = 'secondary',
   ...props
 }) => {
   const link = !!(url || 'a' === type)
-  const itemAttrs = {
+  const inactive = (disabled || processing) ? true : false
+  const actionProps = {
     ...props,
-    class: clsx('btn', `btn-${variant}`, clsa, link && processing && 'disabled', dropdown && 'dropdown-toggle'),
-    ...(link ? { href: url || '#' } : { type, disabled: processing }),
-    ...(dropdown ? { 'data-bs-toggle': 'dropdown', 'aria-expanded': 'false' } : {}),
+    class: clsx('btn', `btn-${variant}`, clsa, link && inactive && 'disabled'),
+    ...(link ? { href: url || '#' } : { type, disabled: inactive }),
     ...(onClick ? { onClick } : {}),
   }
-  const label = iconOnly ? (
-    <span class="visually-hidden">{text}</span>
-  ) : (
-    processing ? (
-      <>
-        <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
-        <span class="visually-hidden">{processingText}</span>
-      </>
-    ) : (<IconLabel text={text} icon={icon} />)
-  )
+  const labelElement = <IconLabel text={text} icon={icon} processing={processing} />
 
   if (link) {
-    return <a {...itemAttrs}>{label}</a>
+    return <a {...actionProps}>{labelElement}</a>
   }
 
-  return <button {...itemAttrs}>{label}</button>
+  return <button {...actionProps}>{labelElement}</button>
 }
-
-export default Action
