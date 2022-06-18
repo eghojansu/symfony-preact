@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Concern\CurrentUser;
 use App\Utils;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\CsuserRepository;
@@ -49,9 +50,11 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Cshist::class)]
     private $histories;
 
-    #[Assert\NotBlank(groups: array('Default', 'security'))]
-    #[Assert\Length(min: 5, groups: array('Default', 'security'))]
+    #[Assert\NotBlank(groups: array('password', 'security'))]
+    #[Assert\Length(min: 5, groups: array('password', 'security'))]
     private $newPassword;
+
+    use CurrentUser;
 
     public function __construct()
     {

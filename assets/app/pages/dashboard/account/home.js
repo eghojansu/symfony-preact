@@ -1,8 +1,11 @@
-import { withContext } from '@app/context'
+import { withUser } from '@app/context'
 import Form from '@app/components/form-auto'
 
-export default withContext(({
-  ctx: {},
+export default withUser(({
+  ctx: {
+    user,
+    fetchUser,
+  },
 }) => {
   const controls = [
     {
@@ -10,11 +13,13 @@ export default withContext(({
       minlength: 5,
       required: true,
       break: true,
+      value: user?.name,
     },
     {
       name: 'email',
       type: 'email',
       break: true,
+      value: user?.email,
     },
     {
       name: 'currentPassword',
@@ -24,10 +29,12 @@ export default withContext(({
       break: true,
     },
   ]
+  const afterNotify = async () => await fetchUser()
 
   return (
     <Form
       controls={controls}
+      afterNotify={afterNotify}
       action="/api/account/update"
       backUrl="/dashboard" />
   )

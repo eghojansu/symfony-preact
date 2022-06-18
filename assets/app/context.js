@@ -1,10 +1,11 @@
-import { Component, createContext } from 'preact'
+import { createContext } from 'preact'
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { createHashHistory } from 'history'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 import localforage from 'localforage'
 import FormLogin from './components/form-login'
+import { Loading } from './components/fallback'
 import notify, { confirm } from './lib/notify'
 import { createElement } from './lib/common'
 
@@ -36,8 +37,12 @@ export const withContext = (Component, granted = []) => props => {
 
 export const withUser = (Component, granted = []) => withContext(
   props => {
+    useEffect(() => {
+      !props.ctx.userFetched && props.ctx.fetchUser()
+    }, [props.ctx.userFetched])
+
     if (!props.ctx.userFetched) {
-      return <div>Loading user</div>
+      return <Loading />
     }
 
     return <Component {...props} />
@@ -66,6 +71,9 @@ export default ({ children }) => {
       notify: true,
       anonymous: false,
     })
+    const collectData = data => 'data' in data ? data.data : (
+      ('message' in data) || ('detail' in data) || ('errors' in data) ? null : data
+    )
     req.interceptors.request.use(
       config => {
         stateUp({ fetching: true })
@@ -79,7 +87,7 @@ export default ({ children }) => {
     )
     req.interceptors.response.use(
       origin => {
-        const data = origin.data || {}
+        const data = 'object' === typeof origin.data ? origin.data : {}
 
         stateUp({ fetching: false })
 
@@ -87,17 +95,19 @@ export default ({ children }) => {
           success: 'success' in data ? data.success : true,
           title: data.title || origin.statusText,
           message: data.detail || data.message || 'Request successful',
-          data: 'data' in data ? data.data : data,
+          data: collectData(data),
+          errors: data.errors || null,
           origin,
         }
       },
       origin => {
-        const data = origin.response.data || {}
+        const data = 'object' === typeof origin.response.data ? origin.response.data : {}
         const response = {
           success: false,
           title: data.title || origin.response.statusText,
           message: data.detail || data.message || 'Unknown error',
-          data: 'data' in data ? data.data : data,
+          data: collectData(data),
+          errors: data.errors || null,
           origin,
         }
 
@@ -142,12 +152,12 @@ export default ({ children }) => {
     }
 
     if (doNotify) {
-      notify(withMessage, withSuccess, options)
+      notify(withMessage, success, options)
     }
 
     await localforage.removeItem('__menu')
     Cookies.remove('__token')
-    stateUp({ user: null, token: null, menu: null })
+    stateUp({ user: null, userFetched: null, token: null, menu: null })
   }
   const login = async data => {
     const response = await request.post('/api/login', data)
@@ -159,6 +169,11 @@ export default ({ children }) => {
     }
 
     return response
+  }
+  const fetchUser = async () => {
+    const { data: user } = await request('/api/account/profile')
+
+    stateUp({ user, userFetched: true })
   }
   const loadMenu = async () => {
     const { data } = await request.get('/api/account/menu?roots=top,db')
@@ -227,6 +242,7 @@ export default ({ children }) => {
     request,
     login,
     logout,
+    fetchUser,
   }
 
   useEffect(() => {

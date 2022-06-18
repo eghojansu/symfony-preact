@@ -19,6 +19,7 @@
         "symfony/console": "*",
         "symfony/dotenv": "*",
         "symfony/flex": "^2",
+        "symfony/form": "6.0.*",
         "symfony/framework-bundle": "*",
         "symfony/property-access": "6.0.*",
         "symfony/property-info": "6.0.*",

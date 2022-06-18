@@ -32,7 +32,7 @@ class MenuFixtures extends Fixture
         $menu['ac'] = Csmenu::create(1, 'ac', 'Account', null, 'person', null, $menu['top']);
         $menu[] = Csmenu::create(1, 'ac.acc', 'Profile', '/dashboard/account', 'person-circle', null, $menu['ac']);
         $menu[] = Csmenu::create(2, 'ac.key', 'Password', '/dashboard/account/password', 'key', null, $menu['ac']);
-        $menu[] = Csmenu::create(3, 'ac.out', 'Logout', null, 'power', null, $menu['ac'])->setAttrs(array('class' => 'text-danger', 'data-confirm' => 'logout'));
+        $menu[] = Csmenu::create(3, 'ac.out', 'Logout', null, 'power', null, $menu['ac'])->setAttrs(array('class' => 'text-danger', 'data-action' => 'logout'));
 
         return $menu;
     }

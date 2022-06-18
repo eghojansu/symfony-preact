@@ -1,3 +1,4 @@
+import { route } from 'preact-router'
 import { useState } from 'preact/hooks'
 import { withContext } from '../context'
 import { isCheck } from '../lib/form'
@@ -9,6 +10,8 @@ export default withContext(({
     request,
   },
   onSubmit,
+  afterSubmit,
+  afterNotify,
   action,
   method = 'POST',
   ...formProps
@@ -65,26 +68,32 @@ export default withContext(({
   const handleSubmit = async event => {
     event.preventDefault()
 
+    const update = {
+      values: {},
+      checks: {},
+      errors: {},
+    }
+
+    event.target.querySelectorAll('[name]').forEach($input => {
+      if ($input.name in state.values) {
+        return
+      }
+
+      if (isCheck($input.type)) {
+        update.checks[$input.name] = $input.checked
+        update.values[$input.name] = $input.checked ? $input.value : ''
+      } else {
+        update.values[$input.name] = $input.value
+      }
+
+      update.errors[$input.name] = $input.validationMessage
+    })
+
+    setValues(update.values)
+    setChecks(update.checks)
+    setErrors(update.errors)
+
     if (!event.target.checkValidity()) {
-      const values = {}
-      const checks = {}
-      const errors = {}
-
-      event.target.querySelectorAll('[name]').forEach($input => {
-        if (isCheck($input.type)) {
-          checks[$input.name] = $input.checked
-          values[$input.name] = $input.checked ? $input.value : ''
-        } else {
-          values[$input.name] = $input.value
-        }
-
-        errors[$input.name] = $input.validationMessage
-      })
-
-      setValues(values)
-      setChecks(checks)
-      setErrors(errors)
-
       return
     }
 
@@ -92,7 +101,9 @@ export default withContext(({
 
     if (onSubmit) {
       await onSubmit({
-        ...state,
+        values: { ...state.values, ...update.values },
+        checks: { ...state.checks, ...update.checks },
+        errors: { ...state.errors, ...update.checks },
         event,
         setValues,
         setChecks,
@@ -100,9 +111,9 @@ export default withContext(({
       })
     } else if (action) {
       const values = {}
-      const response = await request(action, {
+      const { success, message, data, errors } = await request(action, {
         method,
-        data: state.values,
+        data: { ...update.values, ...state.values },
       })
 
       event.target.querySelectorAll('[type=password]').forEach($password => {
@@ -119,7 +130,51 @@ export default withContext(({
       })
 
       setValues(values)
-      console.log(response)
+
+      if (errors) {
+        setErrors(
+          Object.fromEntries(
+            Object.entries(errors).map(([field, errors]) => [field, errors.join(', ')])
+          )
+        )
+      }
+
+      if (success) {
+        const args = {
+          values: { ...state.values, ...update.values },
+          checks: { ...state.checks, ...update.checks },
+          errors: { ...state.errors, ...update.checks },
+          event,
+          success,
+          message,
+          data,
+          setValues,
+          setChecks,
+          setErrors,
+        }
+
+        if (afterSubmit) {
+          await afterSubmit(args)
+        } else {
+          notify(message || 'Data has been submitted', true, {
+            title: 'Successful'
+          })
+
+          if (afterNotify) {
+            await afterNotify(args)
+          } else if (data?.redirect) {
+            setTimeout(() => {
+              if (0 > data.redirect.indexOf('://')) {
+                route(data.redirect)
+              } else {
+                window.location.assign(data.redirect)
+              }
+            }, 1200)
+          } else if (data?.refresh) {
+            setTimeout(() => window.location.reload(), 1200)
+          }
+        }
+      }
     } else {
       notify('Unhandled form')
     }

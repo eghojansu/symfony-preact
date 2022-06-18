@@ -177,7 +177,7 @@ const ListGroupItem = ({
       {hasChildren && (
         <ListGroup
           id={elementId}
-          clsa="collapse"
+          class="collapse"
           items={items}
           flush={flush}
           activeUrl={activeUrl}

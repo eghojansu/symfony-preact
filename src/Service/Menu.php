@@ -5,21 +5,20 @@ namespace App\Service;
 use App\Entity\Csmenu;
 use App\Repository\CsmenuRepository;
 use App\Utils;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Security;
 
 class Menu
 {
     public function __construct(
-        private EntityManagerInterface $em,
+        private CsmenuRepository $repo,
         private Security $security,
         private RequestStack $requestStack,
     ) {}
 
     public function getTree(bool $activable, string ...$roots): array
     {
-        $rows = $roots ? $this->repo()->findAll() : array();
+        $rows = $roots ? $this->repo->findAll() : array();
 
         return Utils::reduce(
             $roots,
@@ -100,13 +99,5 @@ class Menu
                 static fn (array $child) => $child['active'],
             )
         );
-    }
-
-    private function repo(): CsmenuRepository
-    {
-        /** @var CsmenuRepository */
-        $repo = $this->em->getRepository(Csmenu::class);
-
-        return $repo;
     }
 }

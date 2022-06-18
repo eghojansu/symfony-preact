@@ -188,7 +188,7 @@ export default ({
     text: 'Cancel',
     icon: 'x-circle',
   },
-  backUrl,
+  backUrl = '/',
   message,
   messageVariant,
   values,
@@ -200,15 +200,17 @@ export default ({
   return (
     <form method={method} {...props}>
       {message && <Alert message={message} variant={messageVariant} />}
-      {controls.map((input, idx) => (
+      {controls.map(({ id, name, value, disabled, ...input }, idx) => (
         <FormGroup
-          key={input.id || input.name || idx}
+          key={id || name || idx}
           {...{
-            value: values && input.name && input.name in values ? values[input.name] : '',
-            disabled: input.disabled || processing,
-            ...(errors && input.name && input.name in errors ? { invalid: !!errors[input.name], message: errors[input.name] } : {}),
-            ...(checks && input.name && input.name in checks ? { checked: checks[input.name] } : {}),
-            ...modifyInput(input),
+            id,
+            name,
+            value: values && name && name in values ? values[name] : (undefined === value ? '' : value),
+            disabled: disabled || processing,
+            ...(errors && name && name in errors ? { invalid: !!errors[name], message: errors[name] } : {}),
+            ...(checks && name && name in checks ? { checked: checks[name] } : {}),
+            ...modifyInput({ id, name, value, disabled, ...input }),
             ...input,
           }} />
       ))}

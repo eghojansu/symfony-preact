@@ -1,11 +1,28 @@
-import { withContext } from '@app/context'
+import Form from '@app/components/form-auto'
 
-export default withContext(({
-  ctx: {},
-}) => {
+export default () => {
+  const controls = [
+    {
+      name: 'newPassword',
+      type: 'password',
+      required: true,
+      view: true,
+      generate: true,
+      break: true,
+    },
+    {
+      name: 'currentPassword',
+      type: 'password',
+      required: true,
+      view: true,
+      break: true,
+    },
+  ]
+
   return (
-    <div>
-      Password
-    </div>
+    <Form
+      controls={controls}
+      action="/api/account/password"
+      backUrl="/dashboard" />
   )
-})
+}

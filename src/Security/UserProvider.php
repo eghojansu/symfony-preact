@@ -15,12 +15,13 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
     public function __construct(
+        private CsuserRepository $repo,
         private EntityManagerInterface $em,
     ) {}
 
     public function loadUserByIdentifier(string $identifier): UserInterface
     {
-        $user = $this->repo()->findUser($identifier);
+        $user = $this->repo->findUser($identifier);
 
         if (!$user) {
             throw new UserNotFoundException();
@@ -50,13 +51,5 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         $that->setPassword($newHashedPassword);
 
         $this->em->flush();
-    }
-
-    private function repo(): CsuserRepository
-    {
-        /** @var CsuserRepository */
-        $repo = $this->em->getRepository(Csuser::class);
-
-        return $repo;
     }
 }
