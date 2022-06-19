@@ -2,12 +2,13 @@ import Router from 'preact-router'
 import { lazy, Suspense } from 'preact/compat'
 import { withContext } from '@app/context'
 import { Nav, ListGroup } from '@app/components/tree'
-import { IconSpinner } from '@app/components/icon'
+import { IconSpinner } from '@app/components/visual'
 import { WaitingPage, NotFoundPage } from '@app/components/fallback'
 import { pathPrefix } from '@app/lib/common'
 import HomePage from './home'
 
 const AccountPage = lazy(() => import('./account'))
+const UserPage = lazy(() => import('./user'))
 
 export default withContext(({
   ctx: {
@@ -33,7 +34,7 @@ export default withContext(({
           <div class="collapse navbar-collapse" id="navbar-top">
             {(
               menu?.top ?
-                <Nav items={menu.top} activeUrl={url} options={{
+                <Nav items={menu.top} activeId={url} options={{
                   class: 'navbar-nav ms-auto mb-2 mb-lg-0',
                   dropdown: { end: true },
                 }} /> :
@@ -50,7 +51,7 @@ export default withContext(({
         <div class="offcanvas-body p-0">
           {(
             menu?.db ?
-              <ListGroup items={menu.db} activeUrl={url} flush={true} /> :
+              <ListGroup items={menu.db} activeId={url} flush={true} /> :
               <div class="text-center"><IconSpinner variant="secondary" mode="grow" /></div>
           )}
         </div>
@@ -60,6 +61,7 @@ export default withContext(({
           <Router>
             <HomePage path={prefix} />
             <AccountPage path={`${prefix}/account/:rest*`} />
+            <UserPage path={`${prefix}/adm/user`} />
             <NotFoundPage default />
           </Router>
         </Suspense>

@@ -2,6 +2,7 @@
 
 namespace App\Entity\Concern;
 
+use Symfony\Component\Serializer\Annotation\Ignore;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\Validator\Constraints as SecurityAssert;
 
@@ -9,6 +10,7 @@ trait CurrentUser
 {
     #[Assert\NotBlank(groups: array('current_user'))]
     #[SecurityAssert\UserPassword(groups: array('current_user'))]
+    #[Ignore]
     private $currentPassword;
 
     public function getCurrentPassword(): string|null

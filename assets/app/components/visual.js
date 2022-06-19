@@ -18,3 +18,9 @@ export const IconSpinner = ({ status = 'Loading...', mode = 'border', size = 'sm
     {status && <span class="visually-hidden">{status}</span>}
   </div>
 )
+export const IconLoading = ({ text = 'Loading...', mode = 'grow', size = 'sm', variant = 'secondary'}) => (
+  <div class={clsx('d-flex', 'align-items-center')}>
+    <span class={clsx(`spinner-${mode}`, size && `spinner-${mode}-sm`, variant && `text-${variant}`, 'me-2')} role="status" aria-hidden="true"></span>
+    <span class="fst-italic">{text}</span>
+  </div>
+)

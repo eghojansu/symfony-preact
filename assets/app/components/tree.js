@@ -1,11 +1,10 @@
 import { caseKebab, clsx, random } from '../lib/common'
-import { IconLabel } from './icon'
-
-const activeChecker = activeUrl => item => item?.url && item.url === activeUrl
+import { itemMatcher } from '../lib/tree'
+import { IconLabel } from './visual'
 
 const NavDropdownItem = ({
   item,
-  activeUrl,
+  activeId,
   activeClass,
 }) => {
   const {
@@ -14,7 +13,7 @@ const NavDropdownItem = ({
     url,
     attrs = {}
   } = item
-  const activeCheck = activeChecker(activeUrl)
+  const activeCheck = itemMatcher(activeId)
   const linkAttr = {
     ...attrs,
     class: clsx('dropdown-item', activeCheck(item) && (activeClass || 'active'), item.attrs?.class),
@@ -31,7 +30,7 @@ const NavDropdownItem = ({
 }
 export const NavDropdown = ({
   items,
-  activeUrl,
+  activeId,
   activeClass,
   parentId,
   options,
@@ -52,13 +51,13 @@ export const NavDropdown = ({
         key={item.id || idx}
         item={item}
         activeClass={activeClass}
-        activeUrl={activeUrl} />
+        activeId={activeId} />
       ))}
     </ul>
   )
 }
 
-const NavItem = ({ item, activeUrl, options = {} }) => {
+const NavItem = ({ item, activeId, onClose, onClick, options = {} }) => {
   const {
     itemClass = 'dropdown',
     linkClass = 'dropdown-toggle',
@@ -71,11 +70,19 @@ const NavItem = ({ item, activeUrl, options = {} }) => {
     text,
     icon,
     items,
+    closable,
     attrs = {},
   } = item
   const hasChildren = items?.length > 0
   const elementId = `nav-${caseKebab(id)}`
-  const activeCheck = item => item.url && item.url === activeUrl
+  const activeCheck = itemMatcher(activeId)
+  const handleClose = event => (
+    onClose && (
+      event.preventDefault()
+      || event.stopPropagation()
+      || onClose({ event, item: { id, ...item } })
+    )
+  )
   const active = activeCheck(item)
   const itemAttr = {
     class: clsx('nav-item', hasChildren && itemClass),
@@ -86,6 +93,7 @@ const NavItem = ({ item, activeUrl, options = {} }) => {
       'nav-link',
       hasChildren && linkClass,
       active && (activeClass || 'active'),
+      closable && 'd-flex',
       attrs.class,
     ),
     href: hasChildren || !url ? '#' : url,
@@ -96,22 +104,28 @@ const NavItem = ({ item, activeUrl, options = {} }) => {
       'data-bs-toggle': 'dropdown',
       'aria-expanded': 'false',
     } : {}),
+    ...(onClick ? { onClick: event => (
+      event.preventDefault() || onClick({ event, item: { id, ...item } })
+    )} : {}),
   }
 
   return (
     <li {...itemAttr}>
-      <a {...linkAttr}><IconLabel text={text} icon={icon} /></a>
+      <a {...linkAttr}>
+        <IconLabel text={text} icon={icon} />
+        {closable && <i class="bi-x-circle ms-2" onClick={handleClose}></i>}
+      </a>
       {hasChildren && (<NavDropdown
         items={items}
         parentId={elementId}
-        activeUrl={activeUrl}
+        activeId={activeId}
         activeClass={activeClass}
         options={dropdownOptions} />
       )}
     </li>
   )
 }
-export const Nav = ({ items, activeUrl, options = {} }) => {
+export const Nav = ({ items, activeId, onClose, onClick, options = {} }) => {
   const {
     class: rootClass = 'nav',
     clsa,
@@ -125,7 +139,9 @@ export const Nav = ({ items, activeUrl, options = {} }) => {
         <NavItem
           key={item.id || idx}
           item={item}
-          activeUrl={activeUrl}
+          activeId={activeId}
+          onClose={onClose}
+          onClick={onClick}
           options={{ activeClass, ...dropdown }} />
       ))}
     </ul>
@@ -135,7 +151,7 @@ export const Nav = ({ items, activeUrl, options = {} }) => {
 const ListGroupItem = ({
   item,
   flush,
-  activeUrl,
+  activeId,
   activeClass,
 }) => {
   const {
@@ -147,7 +163,7 @@ const ListGroupItem = ({
   } = item
   const hasChildren = items?.length > 0
   const elementId = `list-group-${caseKebab(id)}`
-  const activeCheck = item => item.url && item.url === activeUrl
+  const activeCheck = itemMatcher(activeId)
   const active = activeCheck(item)
   const linkAttr = {
     class: clsx(
@@ -180,7 +196,7 @@ const ListGroupItem = ({
           class="collapse"
           items={items}
           flush={flush}
-          activeUrl={activeUrl}
+          activeId={activeId}
           activeClass={activeClass} />
       )}
     </>
@@ -191,7 +207,7 @@ export const ListGroup = ({
   items,
   flush,
   class: clsa,
-  activeUrl,
+  activeId,
   activeClass,
 }) => {
   const attr = {
@@ -207,7 +223,7 @@ export const ListGroup = ({
           item={item}
           flush={flush}
           activeClass={activeClass}
-          activeUrl={activeUrl} />
+          activeId={activeId} />
       ))}
     </div>
   )

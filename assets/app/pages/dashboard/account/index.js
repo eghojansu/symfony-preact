@@ -21,7 +21,7 @@ export default ({ path, url }) => {
   ]
 
   return (
-    <Panel title="Account" activeUrl={url} items={items}>
+    <Panel title="Account" activeId={url} items={items}>
       <Suspense loading={<WaitingPage />}>
         <Router>
           <HomePage path={prefix} />

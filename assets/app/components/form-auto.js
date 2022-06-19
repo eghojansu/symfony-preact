@@ -190,4 +190,4 @@ export default withContext(({
       {...state}
       {...formProps} />
   )
-})
+}, null)

@@ -2,23 +2,29 @@
 
 namespace App\Service;
 
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use App\Exception\FormViolationException;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class Api
 {
+    const MAX_PAGE_SIZE = 80;
+
     public function __construct(
         private FormFactoryInterface $formFactory,
         private SerializerInterface $serializer,
         private RouterInterface $router,
         private RequestStack $requestStack,
+        private EntityManagerInterface $em,
     ) {}
 
     public function json(
@@ -95,16 +101,9 @@ class Api
             $request = $this->requestStack->getCurrentRequest();
         }
 
-        $form = $this->formFactory->create(
-            $type,
-            $data,
-            ($options ?? array()) + $defaults,
-        );
-        $submittedData = (
-            'json' === $request->getContentType() ?
-                json_decode($request->getContent(), true) :
-                $request->request->all()
-        );
+        $isJson = 'json' === $request->getContentType();
+        $submittedData = $isJson ? json_decode($request->getContent(), true) : $request->request->all();
+        $form = $this->formFactory->create($type, $data, ($options ?? array()) + $defaults);
 
         $form->submit($submittedData);
 
@@ -113,5 +112,31 @@ class Api
         }
 
         return $form;
+    }
+
+    public function paginate(string $entity): JsonResponse
+    {
+        $request = $this->requestStack->getCurrentRequest();
+        $page = max(1, $request->query->getInt('page'));
+        $size = min(self::MAX_PAGE_SIZE, max(15, $request->query->getInt('size')));
+        $offset = ($page - 1) * $size;
+
+        /** @var EntityRepository */
+        $repo = $this->em->getRepository($entity);
+        $qb = $repo->createQueryBuilder('a')
+            ->orderBy('a.id');
+
+        $items = new Paginator($qb->getQuery());
+        $total = count($items);
+        $pages = ceil($total / $size);
+        $prev = max(1, $page - 1);
+        $next = min($pages, $page + 1);
+
+        $items->getQuery()
+            ->setFirstResult($offset)
+            ->setMaxResults($size)
+        ;
+
+        return $this->rest(compact('items', 'page', 'size', 'next', 'prev', 'total', 'pages'));
     }
 }

@@ -11,6 +11,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Serializer\Annotation\Ignore;
 
 #[ORM\Entity(repositoryClass: CsuserRepository::class)]
 class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
@@ -38,6 +39,7 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
     private $email;
 
     #[ORM\Column(type: 'string', length: 128, nullable: true)]
+    #[Ignore]
     private $password;
 
     #[ORM\Column(type: 'boolean', nullable: true)]
@@ -48,10 +50,12 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
     private $roles = [];
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Cshist::class)]
+    #[Ignore]
     private $histories;
 
     #[Assert\NotBlank(groups: array('password', 'security'))]
     #[Assert\Length(min: 5, groups: array('password', 'security'))]
+    #[Ignore]
     private $newPassword;
 
     use CurrentUser;
@@ -78,6 +82,7 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
         return $user;
     }
 
+    #[Ignore]
     public function getUserIdentifier(): string
     {
         return $this->getId();

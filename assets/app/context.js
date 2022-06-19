@@ -87,13 +87,13 @@ export default ({ children }) => {
     )
     req.interceptors.response.use(
       origin => {
-        const data = 'object' === typeof origin.data ? origin.data : {}
+        const data = 'object' === typeof origin?.data ? origin.data : {}
 
         stateUp({ fetching: false })
 
         return {
           success: 'success' in data ? data.success : true,
-          title: data.title || origin.statusText,
+          title: data.title || origin?.statusText,
           message: data.detail || data.message || 'Request successful',
           data: collectData(data),
           errors: data.errors || null,
@@ -101,10 +101,10 @@ export default ({ children }) => {
         }
       },
       origin => {
-        const data = 'object' === typeof origin.response.data ? origin.response.data : {}
+        const data = 'object' === typeof origin.response?.data ? origin.response.data : {}
         const response = {
           success: false,
-          title: data.title || origin.response.statusText,
+          title: data.title || origin.response?.statusText,
           message: data.detail || data.message || 'Unknown error',
           data: collectData(data),
           errors: data.errors || null,
@@ -113,11 +113,11 @@ export default ({ children }) => {
 
         stateUp({ fetching: false })
 
-        if (state.token && origin.response.status === 401) {
+        if (state.token && origin.response?.status === 401) {
           logout(false, response.message, false, {
             title: response.title,
           })
-        } else if (origin.config.notify) {
+        } else if (origin.config?.notify) {
           notify(response.message, false, { title: response.title })
         }
 

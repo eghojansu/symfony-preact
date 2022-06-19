@@ -1,5 +1,5 @@
 import { clsx } from '../lib/common'
-import { IconLabel } from './icon'
+import { IconLabel } from './visual'
 import { NavDropdown } from './tree'
 
 export const Toolbar = ({
@@ -25,6 +25,7 @@ export const Group = ({
   items,
   class: clsa,
   groupClass,
+  split,
   dropdowns,
   dropdownLabel = 'Toggle dropdown',
   variant = 'secondary',
