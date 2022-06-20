@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\Csuser;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -15,7 +16,9 @@ class UserType extends AbstractType
             ->add('id')
             ->add('name')
             ->add('email')
-            ->add('active')
+            ->add('active', CheckboxType::class, array(
+                'false_values' => array(null, '', 0, '0', 'off'),
+            ))
         ;
     }
 

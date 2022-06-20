@@ -21,10 +21,10 @@ export default withContext(({
     ],
   }
   const getFormProps = ({
-    text,
     close,
     refresh,
-    data: { url: action = endpoint } = {},
+    setData,
+    data: { item, url: action = endpoint } = {},
   }) => {
     const props = {
       action,
@@ -33,6 +33,7 @@ export default withContext(({
           name: 'id',
           label: 'User ID',
           minlength: 5,
+          maxlength: 8,
           required: true,
           break: true,
         },
@@ -64,13 +65,28 @@ export default withContext(({
 
         if (values.close && close) {
           close()
+        } else if (item) {
+          setData({ item: values })
         } else {
           reset()
         }
       },
     }
 
-    if ('Create' === text) {
+    if (item) {
+      props.method = 'PUT'
+      props.controls.forEach(prop => {
+        const { name, value, type } = prop
+
+        if (undefined === value && name in item) {
+          prop.value = item[name]
+        }
+
+        if ('checkbox' === type && name in item) {
+          prop.checked = prop.value == item[name]
+        }
+      })
+    } else {
       props.controls.push({
         name: 'close',
         label: 'Close after saved',

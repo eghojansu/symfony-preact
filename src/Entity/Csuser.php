@@ -8,12 +8,14 @@ use Doctrine\ORM\Mapping as ORM;
 use App\Repository\CsuserRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Serializer\Annotation\Ignore;
 
 #[ORM\Entity(repositoryClass: CsuserRepository::class)]
+#[UniqueEntity('id')]
 class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
 {
     const ROLES = array(

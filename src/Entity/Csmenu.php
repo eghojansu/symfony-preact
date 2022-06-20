@@ -5,8 +5,10 @@ namespace App\Entity;
 use App\Utils;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\CsmenuRepository;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: CsmenuRepository::class)]
+#[UniqueEntity('id')]
 class Csmenu
 {
     #[ORM\Id]

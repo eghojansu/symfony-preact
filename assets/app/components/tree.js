@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'preact/hooks'
 import { caseKebab, clsx, random } from '../lib/common'
 import { itemMatcher } from '../lib/tree'
 import { IconLabel } from './visual'
@@ -58,6 +59,7 @@ export const NavDropdown = ({
 }
 
 const NavItem = ({ item, activeId, onClose, onClick, options = {} }) => {
+  const ref = useRef()
   const {
     itemClass = 'dropdown',
     linkClass = 'dropdown-toggle',
@@ -71,7 +73,10 @@ const NavItem = ({ item, activeId, onClose, onClick, options = {} }) => {
     icon,
     items,
     closable,
-    attrs = {},
+    attrs: {
+      title,
+      ...attrs
+    },
   } = item
   const hasChildren = items?.length > 0
   const elementId = `nav-${caseKebab(id)}`
@@ -109,10 +114,16 @@ const NavItem = ({ item, activeId, onClose, onClick, options = {} }) => {
     )} : {}),
   }
 
+  useEffect(() => {
+    if (title) {
+      new bootstrap.Tooltip(ref.current)
+    }
+  }, [])
+
   return (
     <li {...itemAttr}>
       <a {...linkAttr}>
-        <IconLabel text={text} icon={icon} />
+        <span ref={ref} title={title} class="text"><IconLabel text={text} icon={icon} /></span>
         {closable && <i class="bi-x-circle ms-2" onClick={handleClose}></i>}
       </a>
       {hasChildren && (<NavDropdown
@@ -125,7 +136,7 @@ const NavItem = ({ item, activeId, onClose, onClick, options = {} }) => {
     </li>
   )
 }
-export const Nav = ({ items, activeId, onClose, onClick, options = {} }) => {
+export const Nav = ({ items, idKey = 'id', activeId, onClose, onClick, options = {} }) => {
   const {
     class: rootClass = 'nav',
     clsa,
@@ -137,7 +148,7 @@ export const Nav = ({ items, activeId, onClose, onClick, options = {} }) => {
     <ul class={clsx(rootClass, clsa)}>
       {items.map((item, idx) => (
         <NavItem
-          key={item.id || idx}
+          key={item[idKey] || idx}
           item={item}
           activeId={activeId}
           onClose={onClose}

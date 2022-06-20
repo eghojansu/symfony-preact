@@ -23,6 +23,16 @@ class UserController extends Controller
         return $this->api->saved();
     }
 
+    #[Route('/{user}', methods: 'PUT')]
+    public function update(Csuser $user)
+    {
+        $this->api->handleJson(UserType::class, $user, true, array(
+            'method' => 'PUT',
+        ));
+
+        return $this->api->saved();
+    }
+
     #[Route('/{user}', methods: 'DELETE')]
     public function delete(Csuser $user)
     {

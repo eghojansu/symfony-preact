@@ -54,7 +54,6 @@ export default withContext(({
     if (isCheck(type)) {
       return {
         onClick: e => {
-          console.log(e.target.defaultValue )
           setChecks({ [name]: e.target.checked })
           setValues({ [name]: e.target.checked ? e.target.value : '' })
           setErrors({ [name]: e.target.validationMessage })

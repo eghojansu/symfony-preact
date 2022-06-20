@@ -41,6 +41,17 @@
     animation: anim-indeterminate 1s infinite linear
     transform-origin: 0% 50%
 
+.nav
+  &.card-header-tabs
+    &>.nav-item
+      &>.nav-link
+        span
+          max-width: 80px
+          white-space: nowrap
+          overflow: hidden
+          text-overflow: ellipsis
+
+
 @keyframes anim-indeterminate
   0%
     transform:  translateX(0) scaleX(0)

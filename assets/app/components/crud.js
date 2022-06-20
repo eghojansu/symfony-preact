@@ -14,6 +14,7 @@ export default withContext(({
   toolbar: initialToolbar,
   source = {},
   creation = true,
+  idKey = 'text',
   renderContent,
   ...panelProps
 }) => {
@@ -28,12 +29,19 @@ export default withContext(({
     total: 0,
     pages: 0,
   })
+  const createTab = (text, close, tab = {}) => ({
+    ...tab,
+    ...(idKey === text ? {} : { [idKey]: text }),
+    text,
+    attrs: { title: text },
+    refresh: loadPagination,
+    setData: (data, replace) => tree.setData(text, data, replace),
+    ...(close ? { closable: true, close: () => tree.removeItem(text) } : {}),
+  })
   const tree = useTree([
-    {
-      text: 'Main',
-    },
+    createTab('Main'),
     ...(initialItems || []),
-  ], 'Main')
+  ], 'Main', idKey)
   const toolbar = {
     label: 'Crud actions toolbar',
     ...(initialToolbar || {}),
@@ -51,8 +59,8 @@ export default withContext(({
     ]
   }
   const itemUrl = (item, keys) => `${endpoint}/${keys.map(key => item[key]).join('/')}`
-  const handleTabClose = ({ item }) => tree.removeItem(item.text)
-  const handleTabSelect = ({ item }) => tree.setActive(item.text)
+  const handleTabClose = ({ item }) => tree.removeItem(item[idKey])
+  const handleTabSelect = ({ item }) => tree.setActive(item[idKey])
   const handleAction = async ({ item, keys, action }) => {
     const url = itemUrl(item, keys)
 
@@ -95,12 +103,6 @@ export default withContext(({
       loadingRef.current = null
     }, 750)
   }
-  const createTab = (text, close, tab = {}) => ({
-    ...tab,
-    text,
-    refresh: loadPagination,
-    ...(close ? { closable: true, close: () => tree.removeItem(text) } : {}),
-  })
 
   useEffect(() => {
     endpoint && loadPagination()
@@ -111,6 +113,7 @@ export default withContext(({
       items={tree.items}
       activeId={tree.activeId}
       toolbar={toolbar}
+      tabIdKey={idKey}
       onTabSelect={handleTabSelect}
       onTabClose={handleTabClose}
       {...panelProps}>

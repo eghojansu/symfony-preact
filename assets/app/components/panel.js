@@ -9,6 +9,7 @@ export default ({
   toolbar,
   children,
   activeId,
+  tabIdKey = 'id',
   onTabClose,
   onTabSelect,
 }) => {
@@ -33,6 +34,7 @@ export default ({
         {items && (
           <Nav
             items={items}
+            idKey={tabIdKey}
             activeId={activeId}
             onClose={onTabClose}
             onClick={onTabSelect}
