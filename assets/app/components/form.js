@@ -14,16 +14,14 @@ export const FormControl = ({
   view,
   generate,
   disabled,
+  id: originalId,
   addons = [],
   type = 'text',
   ...props
 }) => {
   const check = isCheck(type)
   const text = label || props.placeholder || caseTitle(name)
-  const defaults = {
-    id: props.id || `input-${caseKebab(name)}`,
-    placeholder: text,
-  }
+  const id = originalId || `input-${caseKebab(name)}`
   const feedbackState = clsx(valid && 'is-valid', invalid && 'is-invalid')
   const feedbackElement = message ? (
     <div class={clsx(valid && 'valid-feedback', invalid && 'invalid-feedback')}>{message}</div>
@@ -100,27 +98,28 @@ export const FormControl = ({
     control = (
       <div class="form-check">
         <input {...{
-          ...defaults,
           ...props,
           class: clsx('form-check-input', feedbackState, clsa),
           disabled,
           type,
           name,
+          id,
         }} />
-        <label class="form-check-label" for={props.id}>{text}</label>
-        {feedback}
+        <label class="form-check-label" for={id}>{text}</label>
+        {feedbackElement}
       </div>
     )
   } else {
     control = (
       <>
         <input {...{
-          ...defaults,
+          placeholder: text,
           ...props,
           class: clsx('form-control', feedbackState, clsa),
           disabled,
           type,
           name,
+          id,
         }} />
         {addonsElement}
         {feedbackElement}
@@ -200,17 +199,18 @@ export default ({
   return (
     <form method={method} {...props}>
       {message && <Alert message={message} variant={messageVariant} />}
-      {controls.map(({ id, name, value, disabled, ...input }, idx) => (
+      {controls.map(({ id, name, value, type, checked, disabled, ...input }, idx) => (
         <FormGroup
           key={id || name || idx}
           {...{
             id,
             name,
-            value: values && name && name in values ? values[name] : (undefined === value ? '' : value),
+            type,
+            value: !isCheck(type) && values && name && name in values ? values[name] : (undefined === value ? '' : value),
             disabled: disabled || processing,
             ...(errors && name && name in errors ? { invalid: !!errors[name], message: errors[name] } : {}),
-            ...(checks && name && name in checks ? { checked: checks[name] } : {}),
-            ...modifyInput({ id, name, value, disabled, ...input }),
+            ...(checks && name && name in checks ? { checked: checks[name] } : { checked }),
+            ...modifyInput({ id, name, value, type, checked, disabled, ...input }),
             ...input,
           }} />
       ))}

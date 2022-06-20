@@ -17,6 +17,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class Api
 {
+    const MIN_PAGE_SIZE = 15;
     const MAX_PAGE_SIZE = 80;
 
     public function __construct(
@@ -68,6 +69,23 @@ class Api
         mixed $data = null,
         array $headers = null,
     ): JsonResponse {
+        return $this->done(__FUNCTION__, $action, $data, $headers);
+    }
+
+    public function removed(
+        string|array|bool $action = null,
+        mixed $data = null,
+        array $headers = null,
+    ): JsonResponse {
+        return $this->done(__FUNCTION__, $action, $data, $headers);
+    }
+
+    public function done(
+        string $done,
+        string|array|bool $action = null,
+        mixed $data = null,
+        array $headers = null,
+    ): JsonResponse {
         $add = array();
 
         if (is_bool($action)) {
@@ -80,16 +98,36 @@ class Api
 
         return $this->rest(
             ($data ?? array()) + $add,
-            'Data has been saved',
+            'Data has been ' . $done,
             true,
             null,
             $headers,
         );
     }
 
+    public function handleJson(
+        string $formType,
+        object $data,
+        callable|bool $persist = false,
+        array $options = null,
+        Request &$request = null,
+    ): void {
+        $this->handleJsonForm($formType, $data, $options, $request);
+
+        if ($persist) {
+            if (is_callable($persist)) {
+                $persist($data, $this->em);
+            } else {
+                $this->em->persist($data);
+            }
+        }
+
+        $this->em->flush();
+    }
+
     public function handleJsonForm(
         string $type,
-        $data = null,
+        object|array $data = null,
         array $options = null,
         Request &$request = null,
     ): FormInterface {
@@ -118,7 +156,7 @@ class Api
     {
         $request = $this->requestStack->getCurrentRequest();
         $page = max(1, $request->query->getInt('page'));
-        $size = min(self::MAX_PAGE_SIZE, max(15, $request->query->getInt('size')));
+        $size = min(self::MAX_PAGE_SIZE, max(self::MIN_PAGE_SIZE, $request->query->getInt('size')));
         $offset = ($page - 1) * $size;
 
         /** @var EntityRepository */

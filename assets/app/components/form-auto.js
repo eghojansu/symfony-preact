@@ -11,13 +11,15 @@ export default withContext(({
   },
   onSubmit,
   afterSubmit,
-  afterNotify,
+  afterSuccess,
+  afterComplete,
   action,
   method = 'POST',
   ...formProps
 }) => {
   const [state, stateSet] = useState({
     processing: false,
+    message: null,
     values: {},
     checks: {},
     errors: {},
@@ -43,6 +45,7 @@ export default withContext(({
       ...(errors || {}),
     },
   }))
+  const setMessage = message => stateSet(state => ({ ...state, message }))
   const handleInit = ({ name, type }) => {
     if (!name) {
       return {}
@@ -51,6 +54,7 @@ export default withContext(({
     if (isCheck(type)) {
       return {
         onClick: e => {
+          console.log(e.target.defaultValue )
           setChecks({ [name]: e.target.checked })
           setValues({ [name]: e.target.checked ? e.target.value : '' })
           setErrors({ [name]: e.target.validationMessage })
@@ -68,6 +72,7 @@ export default withContext(({
   const handleSubmit = async event => {
     event.preventDefault()
 
+    const ignores = []
     const update = {
       values: {},
       checks: {},
@@ -75,6 +80,10 @@ export default withContext(({
     }
 
     event.target.querySelectorAll('[name]').forEach($input => {
+      if ($input.dataset.ignore) {
+        ignores.push($input.name)
+      }
+
       if ($input.name in state.values) {
         return
       }
@@ -97,24 +106,38 @@ export default withContext(({
       return
     }
 
+    const args = {
+      values: { ...state.values, ...update.values },
+      checks: { ...state.checks, ...update.checks },
+      errors: { ...state.errors, ...update.checks },
+      event,
+      setValues,
+      setChecks,
+      setErrors,
+    }
+    const reset = () => {
+      setValues(
+        Object.fromEntries(Object.keys(args.values).map(key => [key, '']))
+      )
+    }
+
     stateSet(state => ({ ...state, processing: true }))
 
     if (onSubmit) {
-      await onSubmit({
-        values: { ...state.values, ...update.values },
-        checks: { ...state.checks, ...update.checks },
-        errors: { ...state.errors, ...update.checks },
-        event,
-        setValues,
-        setChecks,
-        setErrors,
-      })
+      await onSubmit({ ...args, reset })
     } else if (action) {
       const values = {}
-      const { success, message, data, errors } = await request(action, {
+      const response = await request(action, {
         method,
-        data: { ...update.values, ...state.values },
+        data: (() => {
+          const values = { ...update.values, ...state.values }
+
+          ignores.forEach(ignore => delete values[ignore])
+
+          return values
+        })(),
       })
+      const { success, message, data, errors } = response
 
       event.target.querySelectorAll('[type=password]').forEach($password => {
         if ($password.name) {
@@ -132,36 +155,27 @@ export default withContext(({
       setValues(values)
 
       if (errors) {
-        setErrors(
-          Object.fromEntries(
-            Object.entries(errors).map(([field, errors]) => [field, errors.join(', ')])
+        if (Array.isArray(errors)) {
+          setMessage(errors.join(', '))
+        } else {
+          setErrors(
+            Object.fromEntries(
+              Object.entries(errors).map(([field, errors]) => [field, errors.join(', ')])
+            )
           )
-        )
+        }
       }
 
       if (success) {
-        const args = {
-          values: { ...state.values, ...update.values },
-          checks: { ...state.checks, ...update.checks },
-          errors: { ...state.errors, ...update.checks },
-          event,
-          success,
-          message,
-          data,
-          setValues,
-          setChecks,
-          setErrors,
-        }
-
         if (afterSubmit) {
-          await afterSubmit(args)
+          await afterSubmit({ ...response, ...args, reset })
         } else {
           notify(message || 'Data has been submitted', true, {
             title: 'Successful'
           })
 
-          if (afterNotify) {
-            await afterNotify(args)
+          if (afterSuccess) {
+            await afterSuccess({ ...response, ...args, reset })
           } else if (data?.redirect) {
             setTimeout(() => {
               if (0 > data.redirect.indexOf('://')) {
@@ -175,6 +189,8 @@ export default withContext(({
           }
         }
       }
+
+      afterComplete && afterComplete({ ...response, ...args, reset })
     } else {
       notify('Unhandled form')
     }

@@ -10,7 +10,6 @@ export default withUser(({
   const controls = [
     {
       name: 'name',
-      minlength: 5,
       required: true,
       break: true,
       value: user?.name,
@@ -29,12 +28,12 @@ export default withUser(({
       break: true,
     },
   ]
-  const afterNotify = async () => await fetchUser()
+  const afterSuccess = async () => await fetchUser()
 
   return (
     <Form
       controls={controls}
-      afterNotify={afterNotify}
+      afterSuccess={afterSuccess}
       action="/api/account/update"
       backUrl="/dashboard" />
   )

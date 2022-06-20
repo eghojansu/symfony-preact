@@ -2,13 +2,14 @@
 
 namespace App\Service;
 
-use App\Form\AccountProfileType;
+use App\Entity\Csuser;
+use App\Form\AccountType;
 use App\Form\AccountPasswordType;
 use Doctrine\ORM\EntityManagerInterface;
 use App\DependencyInjection\Awareness\UserAware;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Contracts\Service\ServiceSubscriberTrait;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class Account implements ServiceSubscriberInterface
 {
@@ -32,19 +33,20 @@ class Account implements ServiceSubscriberInterface
 
     public function profileUpdate(): void
     {
-        $user = $this->user();
-
-        $this->api->handleJsonForm(AccountProfileType::class, $user);
-        $this->em->flush();
+        $this->api->handleJson(AccountType::class, $this->user());
     }
 
     public function passwordUpdate(): void
     {
-        $user = $this->user();
-
-        $this->api->handleJsonForm(AccountPasswordType::class, $user);
-        $user->setPassword($this->passwordHasher->hashPassword($user, $user->getNewPassword()));
-
-        $this->em->flush();
+        $this->api->handleJson(
+            AccountPasswordType::class,
+            $this->user(),
+            static fn (Csuser $user) => $user->setPassword(
+                $this->passwordHasher->hashPassword(
+                    $user,
+                    $user->getNewPassword(),
+                ),
+            ),
+        );
     }
 }

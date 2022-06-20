@@ -5,10 +5,11 @@ import { NavDropdown } from './tree'
 export const Toolbar = ({
   groups,
   label,
+  direction,
   class: clsa,
 }) => {
   const attr = {
-    class: clsx('btn-toolbar', clsa),
+    class: clsx('btn-toolbar', direction && `justify-content-${direction}`, clsa),
     role: 'toolbar',
     ...(label ? { 'aria-label': label } : {}),
   }
@@ -26,13 +27,14 @@ export const Group = ({
   class: clsa,
   groupClass,
   split,
+  size,
   dropdowns,
   dropdownLabel = 'Toggle dropdown',
   variant = 'secondary',
   ...actionProps
 }) => {
   const attr = {
-    class: clsx('btn-group', groupClass),
+    class: clsx('btn-group', size && `btn-group-${size}`, groupClass),
     role: 'group',
     ...(label ? { 'aria-label': label } : {}),
   }
