@@ -76,7 +76,7 @@ const NavItem = ({ item, activeId, onClose, onClick, options = {} }) => {
     attrs: {
       title,
       ...attrs
-    },
+    } = {},
   } = item
   const hasChildren = items?.length > 0
   const elementId = `nav-${caseKebab(id)}`
@@ -136,28 +136,30 @@ const NavItem = ({ item, activeId, onClose, onClick, options = {} }) => {
     </li>
   )
 }
-export const Nav = ({ items, idKey = 'id', activeId, onClose, onClick, options = {} }) => {
-  const {
-    class: rootClass = 'nav',
-    clsa,
-    activeClass,
-    dropdown = {},
-  } = options
-
-  return (
-    <ul class={clsx(rootClass, clsa)}>
-      {items.map((item, idx) => (
-        <NavItem
-          key={item[idKey] || idx}
-          item={item}
-          activeId={activeId}
-          onClose={onClose}
-          onClick={onClick}
-          options={{ activeClass, ...dropdown }} />
-      ))}
-    </ul>
-  )
-}
+export const Nav = ({
+  items,
+  idKey = 'id',
+  class: rootClass = 'nav',
+  clsa,
+  variant,
+  activeClass,
+  activeId,
+  onClose,
+  onSelect,
+  dropdown = {},
+}) => (
+  <ul class={clsx(rootClass, variant && `nav-${variant}`, clsa)}>
+    {items.map((item, idx) => (
+      <NavItem
+        key={item[idKey] || idx}
+        item={item}
+        activeId={activeId}
+        onClose={onClose}
+        onSelect={onSelect}
+        options={{ activeClass, ...dropdown }} />
+    ))}
+  </ul>
+)
 
 const ListGroupItem = ({
   item,

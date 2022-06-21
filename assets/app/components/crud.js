@@ -41,7 +41,7 @@ export default withContext(({
   const tree = useTree([
     createTab('Main'),
     ...(initialItems || []),
-  ], 'Main', idKey)
+  ], null, idKey)
   const toolbar = {
     label: 'Crud actions toolbar',
     ...(initialToolbar || {}),
@@ -59,8 +59,6 @@ export default withContext(({
     ]
   }
   const itemUrl = (item, keys) => `${endpoint}/${keys.map(key => item[key]).join('/')}`
-  const handleTabClose = ({ item }) => tree.removeItem(item[idKey])
-  const handleTabSelect = ({ item }) => tree.setActive(item[idKey])
   const handleAction = async ({ item, keys, action }) => {
     const url = itemUrl(item, keys)
 
@@ -114,8 +112,8 @@ export default withContext(({
       activeId={tree.activeId}
       toolbar={toolbar}
       tabIdKey={idKey}
-      onTabSelect={handleTabSelect}
-      onTabClose={handleTabClose}
+      onTabSelect={tree.handleTabSelect}
+      onTabClose={tree.handleTabClose}
       {...panelProps}>
       {renderContent && 'Main' !== tree.activeId ? renderContent({
         ...tree.activeItem,

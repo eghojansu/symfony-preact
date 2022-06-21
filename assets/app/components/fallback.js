@@ -23,8 +23,14 @@ export const Loading = ({
   </div>
 )
 
-export const NotFoundPage = () => {
+export const NotFound = () => {
   return (
     <div class="p-3">Not Found</div>
+  )
+}
+
+export const NotFoundPage = () => {
+  return (
+    <NotFound />
   )
 }

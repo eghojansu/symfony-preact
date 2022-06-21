@@ -6,34 +6,34 @@ export const itemMatcher = check => item => (
   || (item?.text && item.text === check)
 )
 
-export default (initialItems, initialActive, activeKey = 'text') => {
+export default (initialItems, initialActive, idKey = 'text') => {
   const [items, itemsSet] = useState(initialItems || [])
-  const [activeId, activeIdSet] = useState(initialActive)
+  const [activeId, activeIdSet] = useState(initialActive || (initialItems ? initialItems[0][idKey] : ''))
   const activeItem = useMemo(() => items.find(itemMatcher(activeId)), [items, activeId])
   const addItem = (item, update) => {
-    const existing = items.find(itemMatcher(item[activeKey]))
+    const existing = items.find(itemMatcher(item[idKey]))
 
     if (existing && update) {
       const pos = items.indexOf(existing)
 
       itemsSet([
         ...items.slice(0, pos),
-        { ...existing, ...item, [activeKey]: existing[activeKey] },
+        { ...existing, ...item, [idKey]: existing[idKey] },
         ...items.slice(pos + 1),
       ])
     } else if (!existing || item.multiple) {
       itemsSet(items => [...items, item])
     }
 
-    activeIdSet(item[activeKey])
+    activeIdSet(item[idKey])
   }
   const removeItem = id => itemsSet(items => {
     const pos = items.findIndex(itemMatcher(id))
     const newItems = [...items.slice(0, pos), ...items.slice(pos + 1)]
     const nextActive = (newItems[pos] || newItems[0])
 
-    if (nextActive && activeKey in nextActive) {
-      activeIdSet(nextActive[activeKey])
+    if (nextActive && idKey in nextActive) {
+      activeIdSet(nextActive[idKey])
     }
 
     return newItems
@@ -58,6 +58,8 @@ export default (initialItems, initialActive, activeKey = 'text') => {
       ...items.slice(pos + 1),
     ]
   })
+  const handleTabClose = ({ item }) => removeItem(item[idKey])
+  const handleTabSelect = ({ item }) => activeIdSet(item[idKey])
 
   return {
     items,
@@ -67,5 +69,7 @@ export default (initialItems, initialActive, activeKey = 'text') => {
     removeItem,
     setActive: activeIdSet,
     setData,
+    handleTabClose,
+    handleTabSelect,
   }
 }

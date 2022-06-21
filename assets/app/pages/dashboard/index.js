@@ -34,10 +34,7 @@ export default withContext(({
           <div class="collapse navbar-collapse" id="navbar-top">
             {(
               menu?.top ?
-                <Nav items={menu.top} activeId={url} options={{
-                  class: 'navbar-nav ms-auto mb-2 mb-lg-0',
-                  dropdown: { end: true },
-                }} /> :
+                <Nav items={menu.top} activeId={url} class="navbar-nav ms-auto mb-2 mb-lg-0" dropdown={{ end: true }} /> :
                 <div class="ms-auto"><IconSpinner variant="secondary" mode="grow" /></div>
             )}
           </div>

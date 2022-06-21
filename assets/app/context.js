@@ -188,6 +188,9 @@ export default ({ children }) => {
     await localforage.setItem('__menu', menu)
     stateUp({ menu })
   }
+  const checkAuth = async () => {
+    await request('/api/account')
+  }
   const initialize = async () => {
     const menu = await localforage.getItem('__menu')
     const token = Cookies.get('__token')
@@ -265,7 +268,9 @@ export default ({ children }) => {
     }
   }, [state.fetching])
   useEffect(() => {
-    state.token && !state.menu && loadMenu()
+    state.token && (
+      state.menu ? checkAuth() : loadMenu()
+    )
   }, [state.token, state.menu])
   useEffect(() => {
     const removeListeners = registerEventListeners()

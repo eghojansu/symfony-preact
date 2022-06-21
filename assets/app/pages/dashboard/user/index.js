@@ -1,4 +1,7 @@
 import { withContext } from '@app/context'
+import useTree from '@app/lib/tree'
+import { Nav } from '@app/components/tree'
+import { NotFound } from '@app/components/fallback'
 import Crud from '@app/components/crud'
 import Form from '@app/components/form-auto'
 
@@ -104,14 +107,14 @@ export default withContext(({
     const { id, text } = tab
 
     if ('edit' === id) {
-      return <Form {...getFormProps(tab)} />
+      return <EditPage formProps={getFormProps(tab)} />
     }
 
     if ('Create' === text) {
-      return <Form {...getFormProps(tab)} />
+      return <CreatePage formProps={getFormProps(tab)} />
     }
 
-    return <div>Content</div>
+    return <NotFound />
   }
 
   return (
@@ -122,3 +125,25 @@ export default withContext(({
       source={table} />
   )
 })
+
+const CreatePage = ({ formProps }) => {
+  return (
+    <Form {...formProps} />
+  )
+}
+
+const EditPage = ({ formProps }) => {
+  const tree = useTree([
+    { text: 'Data' },
+    { text: 'Access' },
+  ])
+
+  return (
+    <>
+      <Nav items={tree.items} activeId={tree.activeId} onClose={tree.handleTabClose} onSelect={tree.handleTabSelect} variant="tabs" />
+      <div class="pt-3">
+        <Form {...formProps} />
+      </div>
+    </>
+  )
+}

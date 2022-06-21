@@ -37,8 +37,8 @@ export default ({
             idKey={tabIdKey}
             activeId={activeId}
             onClose={onTabClose}
-            onClick={onTabSelect}
-            options={{ clsa: 'nav-tabs card-header-tabs' }} />
+            onSelect={onTabSelect}
+            variant="tabs" clsa="card-header-tabs" />
         )}
       </div>
       <div class="card-body">{children}</div>
