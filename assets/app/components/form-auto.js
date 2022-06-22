@@ -1,8 +1,7 @@
 import { route } from 'preact-router'
-import { useRef, useState } from 'preact/hooks'
-import localforage from 'localforage'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { withContext } from '../context'
-import { isCheck } from '../lib/form'
+import { isCheck, isChoice } from '../lib/form'
 import notify from '../lib/notify'
 import Form from './form'
 
@@ -18,103 +17,119 @@ export default withContext(({
   method = 'POST',
   ...formProps
 }) => {
-  const fetching = useRef()
+  const fetches = useRef({})
+  const fields = useRef({})
   const [state, stateSet] = useState({
     processing: false,
     message: null,
     values: {},
-    checks: {},
     errors: {},
     choices: {},
   })
-  const setValues = values => stateSet(state => ({
+  const stateSetter = (name, initials = {}) => updates => stateSet(state => ({
     ...state,
-    values: {
-      ...state.values,
-      ...(values || {}),
-    },
+    [name]: initials && 'object' === typeof initials ? {
+      ...state[name],
+      ...(updates || initials),
+    } : updates,
   }))
-  const setChecks = checks => stateSet(state => ({
-    ...state,
-    checks: {
-      ...state.checks,
-      ...(checks || {}),
-    },
-  }))
-  const setErrors = errors => stateSet(state => ({
-    ...state,
-    errors: {
-      ...state.errors,
-      ...(errors || {}),
-    },
-  }))
-  const setChoices = choices => stateSet(state => ({
-    ...state,
-    choices: {
-      ...state.choices,
-      ...(choices || {}),
-    },
-  }))
-  const setMessage = message => stateSet(state => ({ ...state, message }))
-  const loadSource = (name, keyword, source) => {
-    if (fetching.current) {
-      clearTimeout(fetching.current)
-    }
+  const setValues = stateSetter('values')
+  const setErrors = stateSetter('errors')
+  const setChoices = stateSetter('choices')
+  const setMessage = stateSetter('message', '')
+  const loadSources = async () => {
+    const fetchItems = async url => {
+      const { data } = await request(url)
 
-    fetching.current = setTimeout(async () => {
-      if (!keyword) {
-        setChoices({ [name]: [] })
+      if ('items' in data) {
+        if (Array.isArray(data.items)) {
+          return data.items
+        }
 
-        return
+        if ('object' === typeof data.items) {
+          return Object.entries(data.items).map(([text, id]) => ({ id, text }))
+        }
       }
 
-      const cache = `${source}-${keyword}`
-      const items = (await localforage.getItem(cache)) || (async () => {
-        const response = await request(source, { params: { keyword }})
-        console.log(response)
+      return []
+    }
 
-        return []
-      })()
+    await Promise.all(
+      Object.entries(fetches.current).filter(([, item]) => !item.fetched).map(
+        ([name, { source }]) => new Promise(async resolve => {
+          const items = await fetchItems(source)
 
-      setChoices({ [name]: items })
-    }, 750)
+          setChoices({ [name]: items })
+          fetches.current[name] = { source, fetched: true }
+          resolve()
+        })
+      )
+    )
   }
-  const handleInit = ({ name, type }) => {
-    if (!name) {
+  const handleInit = (input) => {
+    if (!input?.name) {
       return {}
     }
+
+    const { name, type, expanded, multiple, source } = input
+
+    fields.current[name] = input
 
     if (isCheck(type)) {
       return {
         onClick: e => {
-          setChecks({ [name]: e.target.checked })
           setValues({ [name]: e.target.checked ? e.target.value : '' })
           setErrors({ [name]: e.target.validationMessage })
         }
       }
     }
 
+    if (source && !(name in fetches.current)) {
+      fetches.current[name] = {
+        source,
+        fetched: false,
+      }
+    }
+
+    if (isChoice(type)) {
+      if (expanded) {
+        return {
+          onClick: e => {
+            let value
+
+            if (multiple) {
+              value = Array.isArray(state.values[name]) ? [...state.values[name]] : [state.values[name]].filter(val => undefined !== val)
+
+              if (e.target.checked) {
+                value.push(e.target.value)
+              } else if (value.indexOf(e.target.value) > -1) {
+                value.splice(value.indexOf(e.target.value), 1)
+              }
+            } else {
+              value = e.target.checked ? e.target.value : ''
+            }
+
+            setValues({ [name]: value })
+            setErrors({ [name]: state.errors[name] || e.target.validationMessage })
+          }
+        }
+      }
+
+      return {
+        onChange: e => {
+          const value = multiple ? Array.from(e.target.selectedOptions, option => option.value).filter(v => '' !== v) : e.target.value
+
+          setValues({ [name]: value })
+          setErrors({ [name]: e.target.validationMessage })
+        },
+      }
+    }
+
     return {
       onInput: e => {
-        if (e.target.dataset.source) {
-          loadSource(name, e.target.value, e.target.dataset.source)
-        }
-
         setValues({ [name]: e.target.value })
         setErrors({ [name]: e.target.validationMessage })
       },
-      onFocus: e => {
-        if (e.target.dataset.source) {
-          loadSource(name, e.target.value, e.target.dataset.source)
-        }
-      },
-      onBlur: e => {
-        if (e.target.dataset.source) {
-          setTimeout(() => {
-            loadSource(name, null, e.target.dataset.source)
-          }, 100)
-        }
-      }
     }
   }
   const handleSubmit = async event => {
@@ -123,31 +138,59 @@ export default withContext(({
     const ignores = []
     const update = {
       values: {},
-      checks: {},
       errors: {},
     }
 
-    event.target.querySelectorAll('[name]').forEach($input => {
-      if ($input.dataset.ignore) {
-        ignores.push($input.name)
-      }
+    Object.entries(fields.current).forEach(
+      ([name, { type, expanded, multiple, extra: { ignore } = {} }]) => {
+        if (ignore) {
+          ignores.push(name)
+        }
 
-      if ($input.name in state.values) {
-        return
-      }
+        const check = isCheck(type)
+        const choice = isChoice(type)
 
-      if (isCheck($input.type)) {
-        update.checks[$input.name] = $input.checked
-        update.values[$input.name] = $input.checked ? $input.value : ''
-      } else {
-        update.values[$input.name] = $input.value
-      }
+        event.target.querySelectorAll(`[name="${name}"]`).forEach(el => {
+          update.errors[name] = update.errors[name] || el.validationMessage
 
-      update.errors[$input.name] = $input.validationMessage
-    })
+          if (name in state.values) {
+            return
+          }
+
+          if (choice) {
+            if (expanded) {
+              if (multiple) {
+                if (el.checked) {
+                  if (Array.isArray(update.values[name])) {
+                    update.values[name].push(el.value)
+                  } else {
+                    update.values[name] = [el.value]
+                  }
+                }
+              } else if (el.checked) {
+                update.values[name] = el.value
+              }
+
+              return
+            }
+
+            update.values[name] = multiple ? Array.from(el.selectedOptions, option => option.value).filter(v => '' !== v) : el.value
+
+            return
+          }
+
+          if (check) {
+            update.values[name] = el.checked ? el.value : ''
+
+            return
+          }
+
+          update.values[name] = el.value
+        })
+      }
+    )
 
     setValues(update.values)
-    setChecks(update.checks)
     setErrors(update.errors)
 
     if (!event.target.checkValidity()) {
@@ -156,11 +199,9 @@ export default withContext(({
 
     const args = {
       values: { ...state.values, ...update.values },
-      checks: { ...state.checks, ...update.checks },
-      errors: { ...state.errors, ...update.checks },
+      errors: { ...state.errors, ...update.errors },
       event,
       setValues,
-      setChecks,
       setErrors,
       setChoices,
     }
@@ -246,6 +287,10 @@ export default withContext(({
 
     stateSet(state => ({ ...state, processing: false }))
   }
+
+  useEffect(() => {
+    loadSources()
+  }, [fetches])
 
   return (
     <Form

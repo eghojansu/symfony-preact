@@ -5,6 +5,7 @@ namespace App\Service;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Exception\FormViolationException;
+use App\Utils;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -152,7 +153,7 @@ class Api
         return $form;
     }
 
-    public function paginate(string $entity): JsonResponse
+    public function paginate(string $entity, array $filters = null, \Closure $modify = null): JsonResponse
     {
         $request = $this->requestStack->getCurrentRequest();
         $page = max(1, $request->query->getInt('page'));
@@ -161,8 +162,39 @@ class Api
 
         /** @var EntityRepository */
         $repo = $this->em->getRepository($entity);
-        $qb = $repo->createQueryBuilder('a')
-            ->orderBy('a.id');
+        $qb = $repo->createQueryBuilder('a')->orderBy('a.id');
+
+        if ($filters) {
+            $qb->andWhere(
+                $qb->expr()->andX(
+                    ...Utils::map(
+                        $filters,
+                        static function ($value, $key) use ($qb) {
+                            list($prop, $opr) = explode(' ', $key) + array(1 => null);
+                            $name = $prop;
+
+                            if (false === strpos($prop, '.')) {
+                                $prop = 'a.' . $prop;
+                            } else {
+                                $name = strrchr($prop, '.');
+                            }
+
+                            $id = ':' . $name;
+
+                            return match($opr) {
+                                '<>', '!=' => $qb->setParameter($name, $value)->expr()->neq($prop, $id),
+                                default => $qb->setParameter($name, $value)->expr()->eq($prop, $id),
+                            };
+                        },
+                        false,
+                    ),
+                ),
+            );
+        }
+
+        if ($modify) {
+            $modify($qb);
+        }
 
         $items = new Paginator($qb->getQuery());
         $total = count($items);

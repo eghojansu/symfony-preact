@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'preact/hooks'
 import { caseKebab, caseTitle, clsx, clsa } from './common'
 
-export const isCheck = type => ['checkbox', 'radio'].includes(type)
+export const isCheck = type => /^(checkbox|radio)$/i.test(type)
+export const isChoice = type => /^choice$/i.test(type)
 
 export default (fields, onSubmit) => {
   const keys = Object.keys(fields)

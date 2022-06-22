@@ -48,15 +48,15 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
     private $active;
 
     #[ORM\Column(type: 'simple_array', nullable: true)]
-    #[Assert\Choice(choices: self::ROLES, groups: array('security'))]
+    #[Assert\Choice(choices: self::ROLES, multiple: true, groups: array('access'))]
     private $roles = [];
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Cshist::class)]
     #[Ignore]
     private $histories;
 
-    #[Assert\NotBlank(groups: array('password', 'security'))]
-    #[Assert\Length(min: 5, groups: array('password', 'security'))]
+    #[Assert\NotBlank(groups: array('password'))]
+    #[Assert\Length(min: 5, groups: array('password', 'access'))]
     #[Ignore]
     private $newPassword;
 

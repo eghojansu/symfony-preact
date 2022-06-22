@@ -90,8 +90,8 @@ export default withContext(({
         type: 'checkbox',
         value: '1',
         checked: true,
-        'data-ignore': true,
         break: true,
+        extra: { ignore: true }
       })
     }
 
@@ -101,7 +101,7 @@ export default withContext(({
     const { id, text } = tab
 
     if ('edit' === id) {
-      return <EditPage formProps={getFormProps(tab)} />
+      return <EditPage tab={tab} formProps={getFormProps(tab)} />
     }
 
     if ('Create' === text) {
@@ -124,7 +124,7 @@ const CreatePage = ({ formProps }) => {
   )
 }
 
-const EditPage = ({ formProps: { action, ...formProps } }) => {
+const EditPage = ({ tab: { data: { item } }, formProps: { action, ...formProps } }) => {
   const { items, activeId, setActive, handleTabSelect } = useTree([
     { text: 'Data' },
     { text: 'Access' },
@@ -141,9 +141,11 @@ const EditPage = ({ formProps: { action, ...formProps } }) => {
           controls: [
             {
               name: 'roles',
-              choice: true,
+              type: 'choice',
+              multiple: true,
               break: true,
-              'data-source': '/api/data/roles',
+              value: item?.roles,
+              source: '/api/data/roles',
             },
             {
               name: 'newPassword',

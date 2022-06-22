@@ -1,5 +1,5 @@
 import { caseKebab, caseTitle, clsx, random } from '../lib/common'
-import { isCheck } from '../lib/form'
+import { isCheck, isChoice } from '../lib/form'
 import { Alert } from './dialog'
 import { Action } from './button'
 
@@ -12,7 +12,6 @@ export const FormControl = ({
   message,
   class: clsa,
   groupClass,
-  choice,
   multiple,
   expanded,
   view,
@@ -20,23 +19,20 @@ export const FormControl = ({
   disabled,
   id: originalId,
   items,
+  extra,
   renderAutocomplete,
   addons = [],
   type = 'text',
   ...props
 }) => {
   const check = isCheck(type)
+  const choice = isChoice(type)
   const text = label || props.placeholder || caseTitle(name)
   const id = originalId || `input-${caseKebab(name)}`
   const feedbackState = clsx(valid && 'is-valid', invalid && 'is-invalid')
   const feedbackElement = message ? (
     <div class={clsx(valid && 'valid-feedback', invalid && 'invalid-feedback')}>{message}</div>
   ) : null
-  const handleAutocompleteSelect = (item, idx) => event => {
-    event.preventDefault()
-
-    console.log(item, idx)
-  }
 
   if ('password' === type) {
     if (generate) {
@@ -121,14 +117,77 @@ export const FormControl = ({
         {feedbackElement}
       </div>
     )
+  } else if (choice && expanded) {
+    if (multiple) {
+      control = (
+        <>
+          {(items || []).map((item, ndx) => (
+            <div key={item.id} class="form-check">
+              <input {...{
+                ...props,
+                class: clsx('form-check-input', feedbackState, clsa),
+                disabled,
+                checked: Array.isArray(value) && value.includes(item.id),
+                value: item.id,
+                type: 'checkbox',
+                name,
+                id: `${id}-${item.id}`,
+              }} />
+              <label class="form-check-label" for={`${id}-${item.id}`}>{item.text}</label>
+              {(ndx === items.length - 1) && feedbackElement}
+            </div>
+          ))}
+        </>
+      )
+    } else {
+      control = (
+        <>
+          {(items || []).map((item, ndx) => (
+            <div key={item.id} class="form-check">
+              <input {...{
+                ...props,
+                class: clsx('form-check-input', feedbackState, clsa),
+                disabled,
+                checked: value == item.id,
+                value: item.id,
+                type: 'radio',
+                name,
+                id: `${id}-${item.id}`,
+              }} />
+              <label class="form-check-label" for={`${id}-${item.id}`}>{item.text}</label>
+              {(ndx === items.length - 1) && feedbackElement}
+            </div>
+          ))}
+        </>
+      )
+    }
+  } else if (choice) {
+    control = (
+      <>
+        <select {...{
+          ...props,
+          class: clsx('form-select', feedbackState, clsa),
+          multiple,
+          disabled,
+          value,
+          name,
+          id,
+        }}>
+          <option key="_placeholder" value="">{`-- Select ${text} --`}</option>
+          {(items || []).map(item => (
+            <option value={item.id} key={item.id}>{item.text}</option>
+          ))}
+        </select>
+        {addonsElement}
+        {feedbackElement}
+      </>
+    )
   } else {
     control = (
       <>
         <input {...{
           placeholder: text,
           ...props,
-          ...(choice ? { autocomplete: 'off' } : {}),
-          ...(multiple ? { 'data-multiple': true } : {}),
           class: clsx('form-control', feedbackState, clsa),
           disabled,
           value,
@@ -138,17 +197,6 @@ export const FormControl = ({
         }} />
         {addonsElement}
         {feedbackElement}
-        {items?.length > 0 && (
-          <ul class="dropdown-menu d-block">
-            {items.map((item, idx) => (
-              <li key={item.id} class={clsx('dropdown-item', item.active && 'active')} onClick={handleAutocompleteSelect(item, idx)}>
-                {renderAutocomplete ? renderAutocomplete({ item, value }, idx) : (
-                  <div class={clsx(item.selected && 'fw-bold')}>{item.text}</div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
       </>
     )
   }
@@ -218,7 +266,6 @@ export default ({
   message,
   messageVariant,
   values,
-  checks,
   errors,
   choices,
   modifyInput = () => ({}),
@@ -236,8 +283,8 @@ export default ({
             type,
             value: !isCheck(type) && values && name && name in values ? values[name] : (undefined === value ? '' : value),
             disabled: disabled || processing,
+            ...(isCheck(type) && values && name in values ? { checked: value == values[name] } : { checked }),
             ...(errors && name && name in errors ? { invalid: !!errors[name], message: errors[name] } : {}),
-            ...(checks && name && name in checks ? { checked: checks[name] } : { checked }),
             ...(choices && name && name in choices ? { items: choices[name] } : {}),
             ...modifyInput({ id, name, value, type, checked, disabled, ...input }),
             ...input,

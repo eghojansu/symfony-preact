@@ -33,6 +33,21 @@ class Utils
         array_walk($items, static fn ($item, $key) => $fn($item, $key, $items));
     }
 
+    public static function map(iterable $items, callable $fn, bool $assoc = true): array
+    {
+        $result = array();
+
+        foreach ($items as $key => $item) {
+            if ($assoc) {
+                $result[$key] = $fn($item, $key, $items, $result);
+            } else {
+                $result[] = $fn($item, $key, $items, $result);
+            }
+        }
+
+        return $result;
+    }
+
     public static function reduce(iterable $items, callable $fn, $initials = null)
     {
         $result = $initials;
