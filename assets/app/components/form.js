@@ -187,6 +187,7 @@ export default ({
     text: 'Cancel',
     icon: 'x-circle',
   },
+  onCancel,
   backUrl = '/',
   message,
   messageVariant,
@@ -221,9 +222,10 @@ export default ({
             ...actionSubmit,
           }} />}
           {actionCancel && <Action {...{
-            url: backUrl,
             processing,
+            url: onCancel ? null : backUrl,
             ...actionCancel,
+            ...(onCancel ? { type: 'button', onClick: onCancel } : {}),
           }} />}
         </div>
       )}

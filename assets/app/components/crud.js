@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { withContext } from '../context'
 import notify, { confirm } from '../lib/notify'
 import useTree from '../lib/tree'
+import { NotFound } from './fallback'
 import Panel from './panel'
 import Table from './table'
 
@@ -115,15 +116,13 @@ export default withContext(({
       onTabSelect={tree.handleTabSelect}
       onTabClose={tree.handleTabClose}
       {...panelProps}>
-      {renderContent && 'Main' !== tree.activeId ? renderContent({
-        ...tree.activeItem,
-      }) : (
+      {'Main' === tree.activeId ? (
         <Table
           loading={loading}
           items={pagination?.items}
           onAction={handleAction}
           {...source} />
-      )}
+      ) : (renderContent(tree.activeItem) || <NotFound />)}
     </Panel>
   )
 }, null)

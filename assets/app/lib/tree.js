@@ -58,6 +58,10 @@ export default (initialItems, initialActive, idKey = 'text') => {
       ...items.slice(pos + 1),
     ]
   })
+  const reset = (newItems = []) => {
+    itemsSet(newItems)
+    activeIdSet(newItems ? newItems[0][idKey] : '')
+  }
   const handleTabClose = ({ item }) => removeItem(item[idKey])
   const handleTabSelect = ({ item }) => activeIdSet(item[idKey])
 
@@ -65,6 +69,7 @@ export default (initialItems, initialActive, idKey = 'text') => {
     items,
     activeId,
     activeItem,
+    reset,
     addItem,
     removeItem,
     setActive: activeIdSet,

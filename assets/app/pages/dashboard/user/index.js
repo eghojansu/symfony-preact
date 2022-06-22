@@ -1,7 +1,6 @@
 import { withContext } from '@app/context'
 import useTree from '@app/lib/tree'
 import { Nav } from '@app/components/tree'
-import { NotFound } from '@app/components/fallback'
 import Crud from '@app/components/crud'
 import Form from '@app/components/form-auto'
 
@@ -57,12 +56,7 @@ export default withContext(({
           break: true,
         },
       ],
-      actionCancel: {
-        url: null,
-        text: 'Cancel',
-        icon: 'x-circle',
-        onClick: () => close && close(),
-      },
+      onCancel: () => close && close(),
       afterSuccess: ({ values, reset }) => {
         refresh()
 
@@ -113,8 +107,6 @@ export default withContext(({
     if ('Create' === text) {
       return <CreatePage formProps={getFormProps(tab)} />
     }
-
-    return <NotFound />
   }
 
   return (
@@ -132,17 +124,36 @@ const CreatePage = ({ formProps }) => {
   )
 }
 
-const EditPage = ({ formProps }) => {
-  const tree = useTree([
+const EditPage = ({ formProps: { action, ...formProps } }) => {
+  const { items, activeId, setActive, handleTabSelect } = useTree([
     { text: 'Data' },
     { text: 'Access' },
-  ])
+  ], 'Access')
 
   return (
     <>
-      <Nav items={tree.items} activeId={tree.activeId} onClose={tree.handleTabClose} onSelect={tree.handleTabSelect} variant="tabs" />
+      <Nav items={items} activeId={activeId} onSelect={handleTabSelect} variant="tabs" />
       <div class="pt-3">
-        <Form {...formProps} />
+        {'Data' === activeId && <Form action={action} {...formProps} />}
+        {'Access' === activeId && <Form {...{
+          action: `${action}/access`,
+          method: 'PATCH',
+          controls: [
+            {
+              name: 'roles',
+              break: true,
+            },
+            {
+              name: 'newPassword',
+              label: 'Password',
+              type: 'password',
+              view: true,
+              generate: true,
+              break: true,
+            },
+          ],
+          onCancel: () => setActive('Data'),
+        }} />}
       </div>
     </>
   )

@@ -155,7 +155,7 @@ export const Nav = ({
         item={item}
         activeId={activeId}
         onClose={onClose}
-        onSelect={onSelect}
+        onClick={onSelect}
         options={{ activeClass, ...dropdown }} />
     ))}
   </ul>
