@@ -5,16 +5,22 @@ import { Action } from './button'
 
 export const FormControl = ({
   name = 'control',
+  value,
   label,
   valid,
   invalid,
   message,
   class: clsa,
   groupClass,
+  choice,
+  multiple,
+  expanded,
   view,
   generate,
   disabled,
   id: originalId,
+  items,
+  renderAutocomplete,
   addons = [],
   type = 'text',
   ...props
@@ -26,6 +32,11 @@ export const FormControl = ({
   const feedbackElement = message ? (
     <div class={clsx(valid && 'valid-feedback', invalid && 'invalid-feedback')}>{message}</div>
   ) : null
+  const handleAutocompleteSelect = (item, idx) => event => {
+    event.preventDefault()
+
+    console.log(item, idx)
+  }
 
   if ('password' === type) {
     if (generate) {
@@ -101,6 +112,7 @@ export const FormControl = ({
           ...props,
           class: clsx('form-check-input', feedbackState, clsa),
           disabled,
+          value,
           type,
           name,
           id,
@@ -115,14 +127,28 @@ export const FormControl = ({
         <input {...{
           placeholder: text,
           ...props,
+          ...(choice ? { autocomplete: 'off' } : {}),
+          ...(multiple ? { 'data-multiple': true } : {}),
           class: clsx('form-control', feedbackState, clsa),
           disabled,
+          value,
           type,
           name,
           id,
         }} />
         {addonsElement}
         {feedbackElement}
+        {items?.length > 0 && (
+          <ul class="dropdown-menu d-block">
+            {items.map((item, idx) => (
+              <li key={item.id} class={clsx('dropdown-item', item.active && 'active')} onClick={handleAutocompleteSelect(item, idx)}>
+                {renderAutocomplete ? renderAutocomplete({ item, value }, idx) : (
+                  <div class={clsx(item.selected && 'fw-bold')}>{item.text}</div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </>
     )
   }
@@ -194,6 +220,7 @@ export default ({
   values,
   checks,
   errors,
+  choices,
   modifyInput = () => ({}),
   ...props
 }) => {
@@ -211,6 +238,7 @@ export default ({
             disabled: disabled || processing,
             ...(errors && name && name in errors ? { invalid: !!errors[name], message: errors[name] } : {}),
             ...(checks && name && name in checks ? { checked: checks[name] } : { checked }),
+            ...(choices && name && name in choices ? { items: choices[name] } : {}),
             ...modifyInput({ id, name, value, type, checked, disabled, ...input }),
             ...input,
           }} />

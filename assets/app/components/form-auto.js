@@ -1,5 +1,6 @@
 import { route } from 'preact-router'
-import { useState } from 'preact/hooks'
+import { useRef, useState } from 'preact/hooks'
+import localforage from 'localforage'
 import { withContext } from '../context'
 import { isCheck } from '../lib/form'
 import notify from '../lib/notify'
@@ -17,12 +18,14 @@ export default withContext(({
   method = 'POST',
   ...formProps
 }) => {
+  const fetching = useRef()
   const [state, stateSet] = useState({
     processing: false,
     message: null,
     values: {},
     checks: {},
     errors: {},
+    choices: {},
   })
   const setValues = values => stateSet(state => ({
     ...state,
@@ -45,7 +48,37 @@ export default withContext(({
       ...(errors || {}),
     },
   }))
+  const setChoices = choices => stateSet(state => ({
+    ...state,
+    choices: {
+      ...state.choices,
+      ...(choices || {}),
+    },
+  }))
   const setMessage = message => stateSet(state => ({ ...state, message }))
+  const loadSource = (name, keyword, source) => {
+    if (fetching.current) {
+      clearTimeout(fetching.current)
+    }
+
+    fetching.current = setTimeout(async () => {
+      if (!keyword) {
+        setChoices({ [name]: [] })
+
+        return
+      }
+
+      const cache = `${source}-${keyword}`
+      const items = (await localforage.getItem(cache)) || (async () => {
+        const response = await request(source, { params: { keyword }})
+        console.log(response)
+
+        return []
+      })()
+
+      setChoices({ [name]: items })
+    }, 750)
+  }
   const handleInit = ({ name, type }) => {
     if (!name) {
       return {}
@@ -63,9 +96,25 @@ export default withContext(({
 
     return {
       onInput: e => {
+        if (e.target.dataset.source) {
+          loadSource(name, e.target.value, e.target.dataset.source)
+        }
+
         setValues({ [name]: e.target.value })
         setErrors({ [name]: e.target.validationMessage })
       },
+      onFocus: e => {
+        if (e.target.dataset.source) {
+          loadSource(name, e.target.value, e.target.dataset.source)
+        }
+      },
+      onBlur: e => {
+        if (e.target.dataset.source) {
+          setTimeout(() => {
+            loadSource(name, null, e.target.dataset.source)
+          }, 100)
+        }
+      }
     }
   }
   const handleSubmit = async event => {
@@ -113,6 +162,7 @@ export default withContext(({
       setValues,
       setChecks,
       setErrors,
+      setChoices,
     }
     const reset = () => {
       setValues(

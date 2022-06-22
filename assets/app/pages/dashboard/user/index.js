@@ -141,7 +141,9 @@ const EditPage = ({ formProps: { action, ...formProps } }) => {
           controls: [
             {
               name: 'roles',
+              choice: true,
               break: true,
+              'data-source': '/api/data/roles',
             },
             {
               name: 'newPassword',
