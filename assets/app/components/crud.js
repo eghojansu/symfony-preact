@@ -117,12 +117,53 @@ export default withContext(({
       onTabClose={tree.handleTabClose}
       {...panelProps}>
       {'Main' === tree.activeId ? (
-        <Table
-          loading={loading}
-          items={pagination?.items}
-          onAction={handleAction}
-          {...source} />
+        <MainContent {...{
+          loading,
+          pagination,
+          onAction: handleAction,
+          ...source,
+        }} />
       ) : (renderContent(tree.activeItem) || <NotFound />)}
     </Panel>
   )
 }, null)
+
+const MainContent = ({
+  pagination: { items, total, pages, page = 1, size = 15 } = {},
+  ...props
+}) => {
+  const start = (page - 1) * size + 1
+  const to = start + items?.length - 1
+
+  return (
+    <>
+      <Table items={items} {...props} />
+      <div class="row mt-3">
+        {total > 0 && (
+          <div class="col fst-italic">Displaying {start} &ndash; {to} of {total} record</div>
+        )}
+        {pages > 0 && (
+          <div class="col">
+            <nav aria-label="Page navigation">
+              <ul class="pagination">
+                <li class="page-item">
+                  <a class="page-link" href="#" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                  <a class="page-link" href="#" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
