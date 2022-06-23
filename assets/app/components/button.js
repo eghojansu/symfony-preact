@@ -61,6 +61,7 @@ export const Action = ({
   onClick,
   disabled,
   processing,
+  outline,
   type = 'button',
   variant = 'secondary',
   ...props
@@ -69,7 +70,7 @@ export const Action = ({
   const inactive = (disabled || processing) ? true : false
   const actionProps = {
     ...props,
-    class: clsx('btn', `btn-${variant}`, clsa, link && inactive && 'disabled'),
+    class: clsx('btn', `btn-${outline ? 'outline-' : '' }${variant}`, clsa, link && inactive && 'disabled'),
     ...(link ? { href: url || '#' } : { type, disabled: inactive }),
     ...(onClick ? { onClick } : {}),
   }

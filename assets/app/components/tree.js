@@ -166,6 +166,7 @@ const ListGroupItem = ({
   flush,
   activeId,
   activeClass,
+  onClick,
 }) => {
   const {
     id,
@@ -195,6 +196,9 @@ const ListGroupItem = ({
     ...(active ? {
       'aria-current': 'true',
     } : {}),
+    ...(onClick ? {
+      onClick: event => onClick && onClick({ event, item })
+    } : {}),
   }
 
   return (
@@ -209,6 +213,7 @@ const ListGroupItem = ({
           class="collapse"
           items={items}
           flush={flush}
+          onClick={onClick}
           activeId={activeId}
           activeClass={activeClass} />
       )}
@@ -222,6 +227,7 @@ export const ListGroup = ({
   class: clsa,
   activeId,
   activeClass,
+  onClick,
 }) => {
   const attr = {
     id,
@@ -235,6 +241,7 @@ export const ListGroup = ({
           key={item.id}
           item={item}
           flush={flush}
+          onClick={onClick}
           activeClass={activeClass}
           activeId={activeId} />
       ))}

@@ -9,6 +9,7 @@ import HomePage from './home'
 
 const AccountPage = lazy(() => import('./account'))
 const UserPage = lazy(() => import('./user'))
+const MenuPage = lazy(() => import('./menu'))
 
 export default withContext(({
   ctx: {
@@ -59,6 +60,7 @@ export default withContext(({
             <HomePage path={prefix} />
             <AccountPage path={`${prefix}/account/:rest*`} />
             <UserPage path={`${prefix}/adm/user`} />
+            <MenuPage path={`${prefix}/adm/menu`} />
             <ErrorPage default />
           </Router>
         </Suspense>

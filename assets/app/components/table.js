@@ -23,7 +23,7 @@ const TableRowData = ({ columns, item, renderRowAction }) => (
     {columns.map(column => (
       <TableData key={column.name} item={item} {...column} />
     ))}
-    <td>{renderRowAction && renderRowAction({ item })}</td>
+    {renderRowAction && (<td>{renderRowAction({ item })}</td>)}
   </tr>
 )
 
@@ -61,10 +61,10 @@ export default ({
   items = [],
   detailable,
   editable = true,
-  removeable = true,
+  removable = true,
   onAction,
 }) => {
-  const hasRowActions = (detailable || editable || removeable)
+  const hasRowActions = (detailable || editable || removable)
   const headers = columns.reduce((headers, column) => {
     const id = `row-${column.rowId || 1}`
     const header = headers.find(header => header.id === id) || { id, columns: [] }
@@ -101,7 +101,7 @@ export default ({
         variant: 'success',
         onClick: event => onAction && onAction({ item, keys, event, action: 'edit' }),
       }] : []),
-      ...(removeable ? [{
+      ...(removable ? [{
         icon: 'trash',
         variant: 'danger',
         onClick: event => onAction && onAction({ item, keys, event, action: 'remove' }),

@@ -83,3 +83,13 @@ export const onEvent = (type, selector, fun, root) => {
 }
 export const pathPrefix = path => path.indexOf(':') < 0 ? path : path.slice(0, path.indexOf(':') - 1)
 export const range = (size, start = 1, step = 1) => [...Array(size)].map((...args) => (args[1] * step) + start)
+export const normalizeMenu = menu => {
+  const norm = items => Object.entries(items).map(([, item]) => Array.isArray(item.items) ? item : ({
+    ...item,
+    items: item.items ? norm(item.items) : [],
+  }))
+
+  return Object.fromEntries(
+    Object.entries(menu).map(([root, menu]) => [root, norm(menu)]),
+  )
+}

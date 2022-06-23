@@ -21,6 +21,7 @@ class ClientAccess
     {
         return array(
             '/dashboard/adm/user' => 'ROLE_ADMIN',
+            '/dashboard/adm/menu' => 'ROLE_ADMIN',
         );
     }
 }

@@ -6,7 +6,7 @@ import localforage from 'localforage'
 import FormLogin from './components/form-login'
 import { Loading, LoadingPage, ErrorPage } from './components/fallback'
 import notify, { confirm } from './lib/notify'
-import { createElement } from './lib/common'
+import { createElement, normalizeMenu } from './lib/common'
 
 const AppContext = createContext()
 
@@ -206,13 +206,7 @@ export default ({ children }) => {
   }
   const loadMenu = async () => {
     const { data } = await request.get('/api/account/menu?roots=top,db')
-    const norm = items => Object.entries(items).map(([, item]) => Array.isArray(item.items) ? item : ({
-      ...item,
-      items: item.items ? norm(item.items) : [],
-    }))
-    const menu = Object.fromEntries(
-      Object.entries(data).map(([root, menu]) => [root, norm(menu)]),
-    )
+    const menu = normalizeMenu(data)
 
     await localforage.setItem('__menu', menu)
     stateUp({ menu })
