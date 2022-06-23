@@ -28,6 +28,9 @@ class MenuFixtures extends Fixture
         $menu[] = Csmenu::create(1, 'adm.user', 'Users', '/dashboard/adm/user', 'people', null, $menu['adm']);
         $menu[] = Csmenu::create(2, 'adm.menu', 'Menu', '/dashboard/adm/menu', 'menu-up', null, $menu['adm']);
 
+        $menu['test'] = Csmenu::create(3, 'test', 'Test', null, 'book', 'ROLE_ADMIN', $menu['db']);
+        $menu[] = Csmenu::create(1, 'test.buku', 'Daftar Buku', '/dashboard/test/buku', 'book', null, $menu['test']);
+
         $menu['top'] = Csmenu::create(0, 'top', 'Top Menu');
         $menu['ac'] = Csmenu::create(1, 'ac', 'Account', null, 'person', null, $menu['top']);
         $menu[] = Csmenu::create(1, 'ac.acc', 'Profile', '/dashboard/account', 'person-circle', null, $menu['ac']);
