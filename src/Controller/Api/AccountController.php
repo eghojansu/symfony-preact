@@ -2,6 +2,7 @@
 
 namespace App\Controller\Api;
 
+use App\Security\ClientAccess;
 use App\Service\Account;
 use App\Service\Menu;
 use App\Utils;
@@ -44,5 +45,13 @@ class AccountController extends Controller
         $account->passwordUpdate();
 
         return $this->api->saved();
+    }
+
+    #[Route('/access', methods: 'GET')]
+    public function access(ClientAccess $access)
+    {
+        $granted = $access->isGranted($this->request->query->get('path'));
+
+        return $this->api->rest(compact('granted'));
     }
 }

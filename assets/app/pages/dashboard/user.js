@@ -4,8 +4,7 @@ import { Nav } from '@app/components/tree'
 import Crud from '@app/components/crud'
 import Form from '@app/components/form-auto'
 
-export default withContext(({
-}) => {
+export default withContext(() => {
   const endpoint = '/api/user'
   const table = {
     columns: [

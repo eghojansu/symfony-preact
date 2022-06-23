@@ -3,7 +3,7 @@ import { lazy, Suspense } from 'preact/compat'
 import { withContext } from '@app/context'
 import { Nav, ListGroup } from '@app/components/tree'
 import { IconSpinner } from '@app/components/visual'
-import { WaitingPage, NotFoundPage } from '@app/components/fallback'
+import { WaitingPage, ErrorPage } from '@app/components/fallback'
 import { pathPrefix } from '@app/lib/common'
 import HomePage from './home'
 
@@ -59,7 +59,7 @@ export default withContext(({
             <HomePage path={prefix} />
             <AccountPage path={`${prefix}/account/:rest*`} />
             <UserPage path={`${prefix}/adm/user`} />
-            <NotFoundPage default />
+            <ErrorPage default />
           </Router>
         </Suspense>
       </main>

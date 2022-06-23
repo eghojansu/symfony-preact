@@ -5,6 +5,8 @@ namespace App\Security;
 use App\Entity\Csuser;
 use App\Repository\CsuserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Security\Core\Exception\AccountStatusException;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAccountStatusException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
@@ -25,6 +27,10 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 
         if (!$user) {
             throw new UserNotFoundException();
+        }
+
+        if (!$user->isActive()) {
+            throw new CustomUserMessageAccountStatusException('This account is not active');
         }
 
         return $user;

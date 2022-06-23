@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { withContext } from '../context'
 import notify, { confirm } from '../lib/notify'
 import useTree from '../lib/tree'
-import { NotFound } from './fallback'
+import { ErrorPage } from './fallback'
 import Pagination, { PaginationInfo, PaginationSizer } from './pagination'
 import Panel from './panel'
 import Table from './table'
@@ -22,6 +22,7 @@ export default withContext(({
 }) => {
   const loadingRef = useRef()
   const initials = useRef({})
+  const controller = useRef(new AbortController())
   const [loading, loadingSet] = useState(false)
   const [params, paramsSet] = useState({})
   const [pagination, paginationSet] = useState({
@@ -98,7 +99,7 @@ export default withContext(({
     loadingRef.current = setTimeout(async () => {
       loadingSet(true)
 
-      const { data: pagination } = await request(endpoint, { params })
+      const { data: pagination } = await request(endpoint, { params, signal: controller.current.signal })
 
       paginationSet(pagination)
       loadingSet(false)
@@ -112,6 +113,10 @@ export default withContext(({
 
   useEffect(() => {
     endpoint && loadPagination()
+
+    return () => {
+      controller.current.abort()
+    }
   }, [endpoint, params])
 
   return (
@@ -133,7 +138,7 @@ export default withContext(({
           setParams: paramsSet,
           ...source,
         }} />
-      ) : (renderContent(tree.activeItem) || <NotFound />)}
+      ) : (renderContent(tree.activeItem) || <ErrorPage />)}
     </Panel>
   )
 }, null)

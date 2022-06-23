@@ -19,6 +19,7 @@ export default withContext(({
 }) => {
   const fetches = useRef({})
   const fields = useRef({})
+  const controller = useRef(new AbortController())
   const [state, stateSet] = useState({
     processing: false,
     message: null,
@@ -39,7 +40,7 @@ export default withContext(({
   const setMessage = stateSetter('message', '')
   const loadSources = async () => {
     const fetchItems = async url => {
-      const { data } = await request(url)
+      const { data } = await request(url, { signal: controller.current.signal })
 
       if ('items' in data) {
         if (Array.isArray(data.items)) {
@@ -219,6 +220,7 @@ export default withContext(({
       const values = {}
       const response = await request(action, {
         method,
+        signal: controller.current.signal,
         data: (() => {
           const values = { ...update.values, ...state.values }
 
@@ -290,6 +292,10 @@ export default withContext(({
 
   useEffect(() => {
     loadSources()
+
+    return () => {
+      controller.current.abort()
+    }
   }, [fetches])
 
   return (

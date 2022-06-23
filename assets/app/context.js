@@ -1,11 +1,10 @@
 import { createContext } from 'preact'
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks'
-import { createHashHistory } from 'history'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 import localforage from 'localforage'
 import FormLogin from './components/form-login'
-import { Loading } from './components/fallback'
+import { Loading, LoadingPage, ErrorPage } from './components/fallback'
 import notify, { confirm } from './lib/notify'
 import { createElement } from './lib/common'
 
@@ -21,8 +20,12 @@ export const useAppContext = () => {
   return ctx
 }
 
-export const withContext = (Component, granted = []) => props => {
+export const withContext = (Component, granted = true) => props => {
   const ctx = useAppContext()
+
+  useEffect(() => {
+    granted && ctx.isGranted(props.path)
+  }, [])
 
   if (ctx.loading) {
     return null
@@ -30,6 +33,16 @@ export const withContext = (Component, granted = []) => props => {
 
   if (granted && ctx.isGuest) {
     return <FormLogin app={ctx.app} onSubmit={ctx.login} />
+  }
+
+  if (props.path in ctx.grants) {
+    if (ctx.grants[props.path].granting) {
+      return <LoadingPage title="Stand by" icon="hourglass" message="Checking your access..." />
+    }
+
+    if (!ctx.grants[props.path].granted) {
+      return <ErrorPage title="Access Denied" icon="shield-exclamation" message="You have no right to access this page" />
+    }
   }
 
   return <Component ctx={ctx} {...props} />
@@ -59,7 +72,7 @@ export default ({ children }) => {
     menu: null,
     token: null,
   })
-  const history = useRef(createHashHistory())
+  const [grants, grantsSet] = useState({})
   const isGuest = useMemo(() => !state.token, [state.token])
   const isLogin = useMemo(() => !!state.token, [state.token])
   const request = (() => {
@@ -131,6 +144,21 @@ export default ({ children }) => {
     ...state,
     ...updates,
   }))
+  const isGranted = async path => {
+    if (!state.token) {
+      return true
+    }
+
+    if (path in grants && !grants[path].granting) {
+      return grants[path].granted
+    }
+
+    grantsSet(grants => ({ ...grants, [path] : { granting: true }}))
+
+    const { data } = await request('/api/account/access', { params: { path }})
+
+    grantsSet(grants => ({ ...grants, [path] : { granting: false, granted: data?.granted }}))
+  }
   const logout = async (notifyServer = true, message = null, success = true, options = {}) => {
     let doNotify = true
     let withMessage = message || 'You have been logged out'
@@ -158,6 +186,7 @@ export default ({ children }) => {
     await localforage.removeItem('__menu')
     Cookies.remove('__token')
     stateUp({ user: null, userFetched: null, token: null, menu: null })
+    grantsSet({})
   }
   const login = async data => {
     const response = await request.post('/api/login', data)
@@ -239,13 +268,14 @@ export default ({ children }) => {
   const context = {
     ...state,
     app: window.app,
-    history,
     isGuest,
     isLogin,
     request,
+    grants,
     login,
     logout,
     fetchUser,
+    isGranted,
   }
 
   useEffect(() => {

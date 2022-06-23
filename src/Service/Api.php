@@ -165,25 +165,25 @@ class Api
         $qb = $repo->createQueryBuilder('a')->orderBy('a.id');
 
         if ($filters) {
+            $pos = 1;
             $qb->andWhere(
                 $qb->expr()->andX(
                     ...Utils::map(
                         $filters,
-                        static function ($value, $key) use ($qb) {
+                        static function ($value, $key) use ($qb, &$pos) {
                             list($prop, $opr) = explode(' ', $key) + array(1 => null);
-                            $name = $prop;
 
                             if (false === strpos($prop, '.')) {
                                 $prop = 'a.' . $prop;
-                            } else {
-                                $name = strrchr($prop, '.');
                             }
 
-                            $id = ':' . $name;
-
                             return match($opr) {
-                                '<>', '!=' => $qb->setParameter($name, $value)->expr()->neq($prop, $id),
-                                default => $qb->setParameter($name, $value)->expr()->eq($prop, $id),
+                                '<>', '!=' => $qb
+                                    ->setParameter($pos, $value)
+                                    ->expr()->neq($prop, '?' . ($pos++)),
+                                default => $qb
+                                    ->setParameter($pos, $value)
+                                    ->expr()->eq($prop, '?' . ($pos++)),
                             };
                         },
                         false,
