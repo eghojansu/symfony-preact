@@ -3,6 +3,7 @@ import { withContext } from '../context'
 import notify, { confirm } from '../lib/notify'
 import useTree from '../lib/tree'
 import { NotFound } from './fallback'
+import Pagination, { PaginationInfo, PaginationSizer } from './pagination'
 import Panel from './panel'
 import Table from './table'
 
@@ -20,7 +21,9 @@ export default withContext(({
   ...panelProps
 }) => {
   const loadingRef = useRef()
+  const initials = useRef({})
   const [loading, loadingSet] = useState(false)
+  const [params, paramsSet] = useState({})
   const [pagination, paginationSet] = useState({
     items: [],
     page: 0,
@@ -95,17 +98,21 @@ export default withContext(({
     loadingRef.current = setTimeout(async () => {
       loadingSet(true)
 
-      const { data: pagination } = await request(endpoint)
+      const { data: pagination } = await request(endpoint, { params })
 
       paginationSet(pagination)
       loadingSet(false)
+
+      if (!initials.current.pageSize) {
+        initials.current.pageSize = pagination?.size
+      }
       loadingRef.current = null
     }, 750)
   }
 
   useEffect(() => {
     endpoint && loadPagination()
-  }, [endpoint])
+  }, [endpoint, params])
 
   return (
     <Panel
@@ -120,7 +127,10 @@ export default withContext(({
         <MainContent {...{
           loading,
           pagination,
+          params,
+          initials,
           onAction: handleAction,
+          setParams: paramsSet,
           ...source,
         }} />
       ) : (renderContent(tree.activeItem) || <NotFound />)}
@@ -129,41 +139,33 @@ export default withContext(({
 }, null)
 
 const MainContent = ({
-  pagination: { items, total, pages, page = 1, size = 15 } = {},
+  setParams,
+  initials: { current: { pageSize = 15 }},
+  params: { size: currentSize } = {},
+  pagination,
+  loading,
   ...props
 }) => {
-  const start = (page - 1) * size + 1
-  const to = start + items?.length - 1
+  const { items, total, pages, page = 1, size = 15 } = pagination || {}
+  const handleSizeChange = e =>setParams(params => ({ ...params, size: e.target.value }))
+  const handlePageChange = ({ page }) => setParams(params => ({ ...params, page }))
 
   return (
     <>
-      <Table items={items} {...props} />
-      <div class="row mt-3">
-        {total > 0 && (
-          <div class="col fst-italic">Displaying {start} &ndash; {to} of {total} record</div>
-        )}
-        {pages > 0 && (
+      <Table items={items} loading={loading} {...props} />
+      {!loading && (
+        <div class="row">
           <div class="col">
-            <nav aria-label="Page navigation">
-              <ul class="pagination">
-                <li class="page-item">
-                  <a class="page-link" href="#" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                  </a>
-                </li>
-                <li class="page-item"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item">
-                  <a class="page-link" href="#" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                  </a>
-                </li>
-              </ul>
-            </nav>
+            {total > 0 && (<PaginationInfo page={page} size={size} count={items?.length} total={total} />)}
           </div>
-        )}
-      </div>
+          <div class="col">
+            {pages > 1 && (<Pagination page={page} pages={pages} direction="center" onChange={handlePageChange} />)}
+          </div>
+          <div class="col text-end">
+            {total > 0 && (<PaginationSizer currentSize={currentSize || size} size={pageSize} onChange={handleSizeChange} />)}
+          </div>
+        </div>
+      )}
     </>
   )
 }

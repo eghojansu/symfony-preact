@@ -5,10 +5,12 @@ namespace App\Controller\Api;
 use App\Entity\Csuser;
 use App\Form\UserAccessType;
 use App\Form\UserType;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/user')]
+#[IsGranted('ROLE_ADMIN')]
 class UserController extends Controller
 {
     #[Route('', methods: 'GET')]

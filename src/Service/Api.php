@@ -19,7 +19,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 class Api
 {
     const MIN_PAGE_SIZE = 15;
-    const MAX_PAGE_SIZE = 80;
+    const MAX_PAGE_SIZE = 75;
 
     public function __construct(
         private FormFactoryInterface $formFactory,
