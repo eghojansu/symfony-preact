@@ -1,6 +1,8 @@
 import Swal from 'sweetalert2'
 import { getColor } from './common'
 
+export default notify
+
 export const confirm = (action, {
   title = 'Are you sure?',
   ...options
@@ -29,9 +31,11 @@ export const Toast = Swal.mixin({
   },
 })
 
-export default (message, success, options = {}) => Toast.fire({
-  text: message,
-  icon: success ? 'success' : 'error',
-  title: 'Notification',
-  ...options,
-})
+function notify(message, success, options = {}) {
+  Toast.fire({
+    text: message,
+    icon: success ? 'success' : 'error',
+    title: 'Notification',
+    ...options,
+  })
+}

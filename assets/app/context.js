@@ -1,5 +1,5 @@
 import { createContext } from 'preact'
-import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { useContext, useEffect, useMemo, useState } from 'preact/hooks'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 import localforage from 'localforage'
@@ -7,6 +7,8 @@ import FormLogin from './components/form-login'
 import { Loading, LoadingPage, ErrorPage } from './components/fallback'
 import notify, { confirm } from './lib/notify'
 import { createElement, normalizeMenu } from './lib/common'
+
+export default AppProvider
 
 const AppContext = createContext()
 
@@ -20,50 +22,71 @@ export const useAppContext = () => {
   return ctx
 }
 
-export const withContext = (Component, granted = true) => props => {
+export const withContext = Component => props => {
   const ctx = useAppContext()
-
-  useEffect(() => {
-    granted && ctx.isGranted(props.path)
-  }, [])
 
   if (ctx.loading) {
     return null
   }
 
-  if (granted && ctx.isGuest) {
-    return <FormLogin app={ctx.app} onSubmit={ctx.login} />
-  }
-
-  if (props.path in ctx.grants) {
-    if (ctx.grants[props.path].granting) {
-      return <LoadingPage title="Stand by" icon="hourglass" message="Checking your access..." />
-    }
-
-    if (!ctx.grants[props.path].granted) {
-      return <ErrorPage title="Access Denied" icon="shield-exclamation" message="You have no right to access this page" />
-    }
-  }
-
   return <Component ctx={ctx} {...props} />
 }
 
-export const withUser = (Component, granted = []) => withContext(
+export const withUser = (Component, load) => withContext(
   props => {
-    useEffect(() => {
-      !props.ctx.userFetched && props.ctx.fetchUser()
-    }, [props.ctx.userFetched])
+    const { ctx: { app, login, userFetched, fetchUser, isLogin, isGuest } } = props
 
-    if (!props.ctx.userFetched) {
+    useEffect(() => {
+      load && isLogin && !userFetched && fetchUser()
+    }, [userFetched])
+
+    if (isGuest) {
+      return <FormLogin app={app} onSubmit={login} />
+    }
+
+    if (load && !userFetched) {
       return <Loading />
     }
 
     return <Component {...props} />
   },
-  granted,
 )
 
-export default ({ children }) => {
+export const withGranted = (Component, path = true, load = false) => withUser(
+  props => {
+    const { ctx: { isGranted, grants }, path: currentPath } = props
+    const granted = 'string' === typeof path ? path : currentPath
+
+    useEffect(() => {
+      granted && isGranted(granted)
+    }, [])
+
+    if (granted in grants) {
+      if (grants[granted].granting) {
+        return (
+          <LoadingPage
+            title="Stand by"
+            icon="hourglass"
+            message="Checking your access..." />
+        )
+      }
+
+      if (!grants[granted].granted) {
+        return (
+          <ErrorPage
+            title="Access Denied"
+            icon="shield-exclamation"
+            message="You have no right to access this page" />
+        )
+      }
+    }
+
+    return <Component {...props} />
+  },
+  load,
+)
+
+function AppProvider({ children }) {
   const [state, stateSet] = useState({
     fetching: false,
     loading: true,

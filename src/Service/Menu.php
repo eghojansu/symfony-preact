@@ -16,9 +16,16 @@ class Menu
         private RequestStack $requestStack,
     ) {}
 
+    public function isGranted(string $path): bool
+    {
+        $menu = $this->repo->findMenu($path);
+
+        return !$menu || !$this->skip($menu);
+    }
+
     public function getTree(bool $activable, string ...$roots): array
     {
-        $rows = $roots ? $this->repo->findAll() : array();
+        $rows = $roots ? $this->repo->getMenu() : array();
 
         return Utils::reduce(
             $roots,
@@ -71,30 +78,32 @@ class Menu
         return $menu;
     }
 
-    private function skip(Csmenu $row): bool
+    private function skip(Csmenu $menu): bool
     {
         return (
-            $row->getRoles()
+            $menu->getRoles()
             && Utils::all(
-                $row->getRoles(),
+                $menu->getRoles(),
                 fn (string $role) => !$this->security->isGranted($role),
             )
         );
     }
 
-    private function active(Csmenu $row, array $children): bool
+    private function isMatch(Csmenu $menu, string $path = null): bool
     {
-        $path = $this->requestStack->getCurrentRequest()->getPathInfo();
-
         return (
-            (
-                $row->getPath()
-                && preg_match(
-                    $row->getMatcher() ?? '/^' . preg_quote($row->getPath(), '/') . '/',
-                    $path
-                )
+            $menu->getPath()
+            && preg_match(
+                $menu->getMatcher() ?? '/^' . preg_quote($menu->getPath(), '/') . '/',
+                $path ?? $this->requestStack->getCurrentRequest()->getPathInfo(),
             )
-            || Utils::some(
+        );
+    }
+
+    private function active(Csmenu $menu, array $children): bool
+    {
+        return (
+            $this->isMatch($menu) || Utils::some(
                 $children,
                 static fn (array $child) => $child['active'],
             )

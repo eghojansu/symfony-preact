@@ -2,7 +2,9 @@ import { clsx } from '../lib/common'
 import { Nav } from './tree'
 import { Toolbar } from './button'
 
-export default ({
+export default Panel
+
+function Panel ({
   title,
   class: clsa,
   items,
@@ -12,7 +14,7 @@ export default ({
   tabIdKey = 'id',
   onTabClose,
   onTabSelect,
-}) => {
+}) {
   return (
     <div class={clsx('card', clsa)}>
       <div class="card-header">

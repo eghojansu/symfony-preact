@@ -1,10 +1,10 @@
-import { withContext } from '@app/context'
-import useTree from '@app/lib/tree'
-import { Nav } from '@app/components/tree'
+import { withGranted } from '@app/context'
 import Crud from '@app/components/crud'
 import Form from '@app/components/form-auto'
 
-export default withContext(() => {
+export default withGranted(MainPage)
+
+function MainPage() {
   const endpoint = '/api/buku'
   const table = {
     columns: [
@@ -101,7 +101,7 @@ export default withContext(() => {
       endpoint={endpoint}
       source={table} />
   )
-})
+}
 
 const CreatePage = ({ formProps }) => {
   return (

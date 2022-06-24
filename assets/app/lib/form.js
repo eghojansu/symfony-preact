@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'preact/hooks'
 import { caseKebab, caseTitle, clsx, clsa } from './common'
 
+export default Form
 export const isCheck = type => /^(checkbox|radio)$/i.test(type)
 export const isChoice = type => /^choice$/i.test(type)
 
-export default (fields, onSubmit) => {
+function Form(fields, onSubmit) {
   const keys = Object.keys(fields)
   const norm = (name, field) => {
     const norms = field || {}

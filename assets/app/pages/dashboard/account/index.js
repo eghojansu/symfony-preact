@@ -5,9 +5,11 @@ import { WaitingPage, ErrorPage } from '@app/components/fallback'
 import Panel from '@app/components/panel'
 import HomePage from './home'
 
+export default MainPage
+
 const PasswordPage = lazy(() => import('./password'))
 
-export default ({ path, url }) => {
+function MainPage ({ path, url }) {
   const prefix = pathPrefix(path)
   const items = [
     {

@@ -36,8 +36,7 @@ class TestBukuController extends Controller
     #[Route('/{buku}', methods: 'DELETE')]
     public function delete(TestBuku $buku)
     {
-        $this->em->remove($buku);
-        $this->em->flush();
+        $this->removeEntity($buku);
 
         return $this->api->removed();
     }

@@ -28,6 +28,15 @@ class Utils
         return bin2hex(random_bytes(min(4, ($len - ($len % 2)) / 2)));
     }
 
+    public static function truncate(string $text, int $max, string $append = '...'): string
+    {
+        if (strlen($text) - strlen($append) > $max) {
+            return substr($text, 0, $max - strlen($append)) . $append;
+        }
+
+        return $text;
+    }
+
     public static function walk(iterable $items, callable $fn): void
     {
         array_walk($items, static fn ($item, $key) => $fn($item, $key, $items));

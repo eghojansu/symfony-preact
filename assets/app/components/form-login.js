@@ -2,10 +2,12 @@ import { Alert } from './dialog'
 import useForm from '../lib/form'
 import notify from '../lib/notify'
 
-export default ({
+export default FormLogin
+
+function FormLogin ({
   app,
   onSubmit,
-}) => {
+}) {
   const {
     handleSubmit,
     setValue,

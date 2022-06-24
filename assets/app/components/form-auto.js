@@ -5,7 +5,9 @@ import { isCheck, isChoice } from '../lib/form'
 import notify from '../lib/notify'
 import Form from './form'
 
-export default withContext(({
+export default withContext(FormAuto)
+
+function FormAuto({
   ctx: {
     request,
   },
@@ -16,7 +18,7 @@ export default withContext(({
   action,
   method = 'POST',
   ...formProps
-}) => {
+}) {
   const fetches = useRef({})
   const fields = useRef({})
   const controller = useRef(new AbortController())
@@ -292,11 +294,12 @@ export default withContext(({
 
   useEffect(() => {
     loadSources()
-
+  }, [fetches])
+  useEffect(() => {
     return () => {
       controller.current.abort()
     }
-  }, [fetches])
+  }, [])
 
   return (
     <Form
@@ -306,4 +309,4 @@ export default withContext(({
       {...state}
       {...formProps} />
   )
-}, null)
+}

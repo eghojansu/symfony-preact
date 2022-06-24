@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'preact/hooks'
 
+export default tree
+
 export const itemMatcher = check => item => (
   (item?.url && item.url === check)
   || (item?.id && item.id === check)
   || (item?.text && item.text === check)
 )
 
-export default (initialItems, initialActive, idKey = 'text') => {
+function tree(initialItems, initialActive, idKey = 'text') {
   const [items, itemsSet] = useState(initialItems || [])
   const [activeId, activeIdSet] = useState(initialActive || (initialItems ? initialItems[0][idKey] : ''))
   const activeItem = useMemo(() => items.find(itemMatcher(activeId)), [items, activeId])

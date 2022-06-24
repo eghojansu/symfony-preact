@@ -7,7 +7,9 @@ import Pagination, { PaginationInfo, PaginationSizer } from './pagination'
 import Panel from './panel'
 import Table from './table'
 
-export default withContext(({
+export default withContext(Crud)
+
+function Crud ({
   ctx: {
     request,
   },
@@ -19,7 +21,7 @@ export default withContext(({
   idKey = 'text',
   renderContent,
   ...panelProps
-}) => {
+}) {
   const loadingRef = useRef()
   const initials = useRef({})
   const controller = useRef(new AbortController())
@@ -64,11 +66,11 @@ export default withContext(({
     ]
   }
   const itemUrl = (item, keys) => `${endpoint}/${keys.map(key => item[key]).join('/')}`
-  const handleAction = async ({ item, keys, action }) => {
+  const handleAction = async ({ item: { id: action }, keys, row: item }) => {
     const url = itemUrl(item, keys)
 
     if ('remove' === action) {
-      const { isConfirmed, value: { success, message } } = await confirm(() => request(url, { method: 'DELETE' }))
+      const { isConfirmed, value: { success, message } = {} } = await confirm(() => request(url, { method: 'DELETE' }))
 
       if (isConfirmed && success) {
         notify(message, true)
@@ -113,11 +115,12 @@ export default withContext(({
 
   useEffect(() => {
     endpoint && loadPagination()
-
+  }, [endpoint, params])
+  useEffect(() => {
     return () => {
       controller.current.abort()
     }
-  }, [endpoint, params])
+  }, [])
 
   return (
     <Panel
@@ -141,8 +144,7 @@ export default withContext(({
       ) : (renderContent(tree.activeItem) || <ErrorPage />)}
     </Panel>
   )
-}, null)
-
+}
 const MainContent = ({
   setParams,
   initials: { current: { pageSize = 15 }},
@@ -167,7 +169,7 @@ const MainContent = ({
             {pages > 1 && (<Pagination page={page} pages={pages} direction="center" onChange={handlePageChange} />)}
           </div>
           <div class="col text-end">
-            {total > 0 && (<PaginationSizer currentSize={currentSize || size} size={pageSize} onChange={handleSizeChange} />)}
+            <PaginationSizer currentSize={currentSize || size} size={pageSize} onChange={handleSizeChange} />
           </div>
         </div>
       )}

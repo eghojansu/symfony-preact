@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { withContext } from '@app/context'
-import { caseKebab, clsx, normalizeMenu } from '@app/lib/common'
+import { withGranted } from '@app/context'
+import { clsx, normalizeMenu } from '@app/lib/common'
+import useTree from '@app/lib/tree'
 import Panel from '@app/components/panel'
+import { Nav } from '@app/components/tree'
 import { IconSpinner, IconLabel } from '@app/components/visual'
 import { Toolbar } from '@app/components/button'
 
-export default withContext(({
+export default withGranted(MainPage)
+
+function MainPage({
   ctx: {
     request,
   },
-}) => {
+}) {
   const controller = useRef(new AbortController())
   const groups = [
     {
@@ -22,10 +26,65 @@ export default withContext(({
     },
   ]
   const [menu, menuSet] = useState({})
+  const { items, activeId, setActive, activeItem, addItem: addTab, handleTabSelect } = useTree([
+    { text: 'Menu' },
+  ])
   const loadMenu = async () => {
     const { data } = await request('/api/menu', { signal: controller.current.signal })
 
     menuSet(normalizeMenu(data))
+  }
+  const updatePos = (menu, tree, direction = 1) => {
+    const last = tree.length - 1
+
+    tree.reduce((menu, item, depth) => {
+      const pos = menu.indexOf(item)
+
+      if (depth === last) {
+        const found = menu.splice(pos, 1)
+
+        menu.splice(Math.max(0, pos-direction), 0, ...found)
+
+        return menu
+      }
+
+      return menu[pos].items
+    }, menu)
+
+    return menu
+  }
+  const createActionGroupHandler = group => ({ action: { id },  tree }) => {
+    const last = tree[tree.length - 1]
+
+    if ('up' === id) {
+      menuSet(menu => ({
+        ...menu,
+        [group.id]: updatePos(menu[group.id], tree),
+      }))
+
+      return
+    }
+
+    if ('down' === id) {
+      menuSet(menu => ({
+        ...menu,
+        [group.id]: updatePos(menu[group.id], tree, -1),
+      }))
+
+      return
+    }
+
+    if ('add' === id) {
+      console.log(last)
+      addTab({
+        id: 'add',
+        text: `Add Child`,
+      })
+
+      return
+    }
+
+    console.log('Unhandled action ' + id)
   }
 
   useEffect(() => {
@@ -38,30 +97,61 @@ export default withContext(({
 
   return (
     <Panel title="Manage Menu">
-      <div class="row">
-        {groups.map(group => (
-          <div key={group.id} class="col">
-            <h3 class="fs-5 border-bottom pb-3 mb-3">{group.text}</h3>
-            {group.id in menu ? (
-              <Tree id={group.id} items={menu[group.id]} />
-            ) : <IconSpinner />}
-          </div>
-        ))}
-      </div>
+      <Nav items={items} activeId={activeId} onSelect={handleTabSelect} variant="tabs" />
+      {
+        ('Menu' === activeId && (
+          <MainTab
+            groups={groups}
+            menu={menu}
+            createActionGroupHandler={createActionGroupHandler} />
+        ))
+        || ('add' === activeItem.id && (
+          <CreateForm />
+        ))
+        || null
+      }
     </Panel>
   )
-})
+}
 
-const Tree = ({
-  id,
-  items,
-  class: clsa,
+const MainTab = ({
+  groups,
+  menu,
+  createActionGroupHandler,
+}) => (
+  <div class="row mt-3">
+    {groups.map(group => (
+      <div key={group.id} class="col">
+        <h3 class="fs-5 border-bottom pb-3 mb-3">{group.text}</h3>
+        {group.id in menu ? (
+          <Tree id={group.id} onAction={createActionGroupHandler(group)} items={menu[group.id]} />
+        ) : <IconSpinner />}
+      </div>
+    ))}
+  </div>
+)
+const CreateForm = ({
+
 }) => {
   return (
-    <div id={id} class={clsx('list-group list-group-flush', clsa)}>
-      {items.map(item => (
+    <div>Form</div>
+  )
+}
+const Tree = ({
+  items,
+  class: clsa,
+  onAction,
+}) => {
+  const last = items.length - 1
+
+  return (
+    <div class={clsx('list-group list-group-flush', clsa)}>
+      {items.map((item, pos) => (
         <TreeItem
           key={item.id}
+          onAction={onAction}
+          pos={pos}
+          last={last}
           item={item} />
       ))}
     </div>
@@ -69,56 +159,60 @@ const Tree = ({
 }
 const TreeItem = ({
   item,
+  pos,
+  last,
+  onAction,
 }) => {
   const {
-    id,
     text,
     icon,
     items,
     active,
   } = item
   const hasChildren = items?.length > 0
-  const elementId = `list-group-${caseKebab(id)}`
   const itemAttr = {
     class: clsx(
       'list-group-item d-flex editable-menu-row',
       active && 'active',
     ),
-    ...(hasChildren ? {
-      'aria-current': 'true',
-      'aria-expanded': 'false',
-      'aria-controls': elementId,
-    } : {}),
-    ...(active ? {
-      'aria-current': 'true',
-    } : {}),
   }
+  const handleClick = ({ item: action }) => onAction && onAction({
+    action,
+    tree: [item],
+  })
+  const handleChildAction = ({ tree, ...args }) => onAction && onAction({
+    tree: [item, ...tree],
+    ...args,
+  })
   const groups = [
     {
-      id: 'remove',
-      icon: 'trash',
-      variant: 'danger',
       size: 'sm',
       items: [
         {
+          id: 'add',
+          icon: 'plus-circle',
+          variant: 'primary',
+        },
+        {
+          id: 'edit',
+          icon: 'pencil',
+          variant: 'success',
+        },
+        {
+          id: 'remove',
+          icon: 'trash',
+          variant: 'danger',
+        },
+        {
           id: 'up',
           icon: 'caret-up',
+          disabled: pos === 0,
         },
         {
           id: 'down',
           icon: 'caret-down',
+          disabled: pos === last,
         },
-        {
-          id: 'url',
-          icon: 'globe',
-        },
-        ...(hasChildren ? [
-          {
-            id: 'toggle',
-            icon: 'eye',
-            variant: 'info',
-          },
-        ] : [])
       ]
     },
   ]
@@ -126,15 +220,11 @@ const TreeItem = ({
   return (
     <>
       <div {...itemAttr}>
-        <div class="p-1 me-2"><i class={clsx(`bi-${icon || 'bullseye'}`)}></i></div>
-        <input type="text" value={text} />
-        <Toolbar groups={groups} class="ms-auto" />
+        <IconLabel text={text} icon={icon || 'bullseye'} />
+        <Toolbar groups={groups} onClick={handleClick} class="ms-auto" />
       </div>
       {hasChildren && (
-        <Tree
-          id={elementId}
-          class="collapse"
-          items={items} />
+        <Tree items={items} onAction={handleChildAction} />
       )}
     </>
   )

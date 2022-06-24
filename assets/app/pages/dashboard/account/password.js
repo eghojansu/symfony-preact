@@ -1,6 +1,8 @@
 import Form from '@app/components/form-auto'
 
-export default () => {
+export default MainPage
+
+function MainPage() {
   const controls = [
     {
       name: 'newPassword',

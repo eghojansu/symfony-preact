@@ -26,6 +26,12 @@ abstract class Controller extends AbstractController
         return array();
     }
 
+    protected function removeEntity(object $entity): void
+    {
+        $this->em->remove($entity);
+        $this->em->flush();
+    }
+
     public function __get($name)
     {
         if (method_exists($this, $getter = '_get' . $name)) {

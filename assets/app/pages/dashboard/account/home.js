@@ -1,12 +1,14 @@
 import { withUser } from '@app/context'
 import Form from '@app/components/form-auto'
 
-export default withUser(({
+export default withUser(MainPage, true)
+
+function MainPage ({
   ctx: {
     user,
     fetchUser,
   },
-}) => {
+}) {
   const controls = [
     {
       name: 'name',
@@ -37,4 +39,4 @@ export default withUser(({
       action="/api/account/update"
       backUrl="/dashboard" />
   )
-})
+}

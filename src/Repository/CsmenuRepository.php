@@ -39,28 +39,42 @@ class CsmenuRepository extends ServiceEntityRepository
         }
     }
 
-//    /**
-//     * @return Csmenu[] Returns an array of Csmenu objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('c')
-//            ->andWhere('c.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('c.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+        * @return Csmenu[] Returns an array of Csmenu objects
+        */
+    public function getMenu(): array
+    {
+        $qb = $this->createQueryBuilder('a');
+        $qb->where(
+            $qb->expr()->andX(
+                $qb->expr()->orX(
+                    $qb->expr()->isNull('a.hidden'),
+                    $qb->expr()->eq('a.hidden', ':hidden')
+                ),
+                $qb->expr()->eq('a.active', ':active')
+            )
+        );
+        $qb->setParameters(array(
+            'active' => true,
+            'hidden' => false,
+        ));
 
-//    public function findOneBySomeField($value): ?Csmenu
-//    {
-//        return $this->createQueryBuilder('c')
-//            ->andWhere('c.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        return $qb->getQuery()->getResult();
+    }
+
+    public function findMenu(string $path): ?Csmenu
+    {
+        $qb = $this->createQueryBuilder('a');
+        $qb->where(
+            $qb->expr()->andX(
+                $qb->expr()->eq('a.active', ':active'),
+                $qb->expr()->eq('a.path', ':path'),
+            )
+        );
+        $qb->setParameters(array(
+            'active' => true,
+        ) + compact('path'));
+
+        return $qb->getQuery()->getOneOrNullResult();
+    }
 }

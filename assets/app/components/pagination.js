@@ -1,6 +1,8 @@
 import { clsx, range } from '../lib/common'
 import notify from '../lib/notify'
 
+export default Pagination
+
 export const PaginationInfo = ({
   page = 0,
   size = 0,
@@ -30,13 +32,13 @@ export const PaginationSizer = ({
   )
 }
 
-export default ({
+function Pagination ({
   page = 1,
   pages = 1,
   direction,
   onChange,
   label = 'Page navigation',
-}) => {
+}) {
   const adjacent = 1
   const start = Math.max(page - adjacent, 2)
   const end = Math.min(page + adjacent, pages - 1)

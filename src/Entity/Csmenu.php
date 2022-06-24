@@ -25,6 +25,9 @@ class Csmenu
     #[ORM\Column(type: 'boolean', nullable: true)]
     private $active;
 
+    #[ORM\Column(type: 'boolean', nullable: true)]
+    private $hidden;
+
     #[ORM\Column(type: 'string', length: 64, nullable: true)]
     private $icon;
 
@@ -41,7 +44,7 @@ class Csmenu
     #[ORM\Column(type: 'simple_array', nullable: true)]
     private $roles = [];
 
-    #[ORM\Column(type: 'smallint')]
+    #[ORM\Column(type: 'smallint', nullable: true)]
     private $priority;
 
     #[ORM\Column(type: 'json', nullable: true)]
@@ -68,6 +71,27 @@ class Csmenu
         $menu->setHint($hint);
         $menu->setRoles(Utils::split($roles));
         $menu->setActive($active);
+        $menu->setMatcher($matcher);
+        $menu->setParent($parent);
+
+        return $menu;
+    }
+
+    public static function createRule(
+        string $path,
+        string|array $roles,
+        self $parent = null,
+        string $name = null,
+        string $id = null,
+        string $matcher = null,
+    ): static {
+        $menu = new static();
+        $menu->setId($id ?? Utils::random());
+        $menu->setName($name ?? Utils::truncate($path, 75));
+        $menu->setPath($path);
+        $menu->setRoles(Utils::split($roles));
+        $menu->setActive(true);
+        $menu->setHidden(true);
         $menu->setMatcher($matcher);
         $menu->setParent($parent);
 
@@ -118,6 +142,18 @@ class Csmenu
     public function setActive(?bool $active): self
     {
         $this->active = $active;
+
+        return $this;
+    }
+
+    public function isHidden(): ?bool
+    {
+        return $this->hidden;
+    }
+
+    public function setHidden(?bool $hidden): self
+    {
+        $this->hidden = $hidden;
 
         return $this;
     }
@@ -187,7 +223,7 @@ class Csmenu
         return $this->priority;
     }
 
-    public function setPriority(int $priority): self
+    public function setPriority(int|null $priority): self
     {
         $this->priority = $priority;
 

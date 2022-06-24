@@ -40,6 +40,14 @@ class UserController extends Controller
         return $this->api->saved();
     }
 
+    #[Route('/{user}', methods: 'DELETE')]
+    public function delete(Csuser $user)
+    {
+        $this->removeEntity($user);
+
+        return $this->api->removed();
+    }
+
     #[Route('/{user}/access', methods: 'PATCH')]
     public function access(Csuser $user, UserPasswordHasherInterface $hasher)
     {
@@ -57,14 +65,5 @@ class UserController extends Controller
         );
 
         return $this->api->saved();
-    }
-
-    #[Route('/{user}', methods: 'DELETE')]
-    public function delete(Csuser $user)
-    {
-        $this->em->remove($user);
-        $this->em->flush();
-
-        return $this->api->removed();
     }
 }

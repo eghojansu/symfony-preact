@@ -41,7 +41,7 @@ class Account implements ServiceSubscriberInterface
         $this->api->handleJson(
             AccountPasswordType::class,
             $this->user(),
-            static fn (Csuser $user) => $user->setPassword(
+            fn (Csuser $user) => $user->setPassword(
                 $this->passwordHasher->hashPassword(
                     $user,
                     $user->getNewPassword(),

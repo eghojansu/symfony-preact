@@ -2,6 +2,8 @@ import { clsx, caseTitle } from '../lib/common'
 import { IconLoading } from './visual'
 import { Toolbar } from './button'
 
+export default Table
+
 const TableRowHead = ({ columns }) => (
   <tr>
     {columns.map(column => (
@@ -51,7 +53,7 @@ const TableData = ({ name, item, render, format }) => {
   )
 }
 
-export default ({
+function Table ({
   class: clsa,
   loading,
   bordered = true,
@@ -59,11 +61,12 @@ export default ({
   striped = true,
   columns = [],
   items = [],
+  keys: initialKeys = [],
   detailable,
   editable = true,
   removable = true,
   onAction,
-}) => {
+}) {
   const hasRowActions = (detailable || editable || removable)
   const headers = columns.reduce((headers, column) => {
     const id = `row-${column.rowId || 1}`
@@ -86,37 +89,40 @@ export default ({
 
     return header
   })
-  const keys = columns.filter(column => column.key).map(column => column.name)
+  const keys = initialKeys.concat(columns.filter(column => column.key).map(column => column.name))
   const colSpan = headers.reduce((max, header) => Math.max(max, header.columns.length), 0)
   const empty = !items || items.length < 1
+  const handleRowAction = row => args => onAction && onAction({
+    ...args,
+    row,
+    keys,
+  })
   const renderRowAction = hasRowActions ? ({ item }) => {
-    const items = [
-      ...(detailable ? [{
-        icon: 'eye',
-        variant: 'info',
-        onClick: event => onAction && onAction({ item, keys, event, action: 'view' }),
-      }] : []),
-      ...(editable ? [{
-        icon: 'pencil',
-        variant: 'success',
-        onClick: event => onAction && onAction({ item, keys, event, action: 'edit' }),
-      }] : []),
-      ...(removable ? [{
-        icon: 'trash',
-        variant: 'danger',
-        onClick: event => onAction && onAction({ item, keys, event, action: 'remove' }),
-      }] : []),
-    ]
     const groups = [
       {
         label: "Row actions",
         size: 'sm',
-        ...items.splice(0, 1)[0],
-        items,
+        items: [
+          ...(detailable ? [{
+            id: 'view',
+            icon: 'eye',
+            variant: 'info',
+          }] : []),
+          ...(editable ? [{
+            id: 'edit',
+            icon: 'pencil',
+            variant: 'success',
+          }] : []),
+          ...(removable ? [{
+            id: 'remove',
+            icon: 'trash',
+            variant: 'danger',
+          }] : []),
+        ],
       }
     ]
 
-    return <Toolbar label="Row actions" groups={groups} />
+    return <Toolbar label="Row actions" onClick={handleRowAction(item)} groups={groups} />
   } : null
 
   return (

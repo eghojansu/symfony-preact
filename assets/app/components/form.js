@@ -3,6 +3,8 @@ import { isCheck, isChoice } from '../lib/form'
 import { Alert } from './dialog'
 import { Action } from './button'
 
+export default Form
+
 export const FormControl = ({
   name = 'control',
   value,
@@ -41,8 +43,8 @@ export const FormControl = ({
         icon: 'key',
         tabindex: -1,
         variant: 'warning',
-        onClick: e => {
-          const $input = e.target.closest('.input-group').querySelector('.form-control')
+        onClick: ({ event }) => {
+          const $input = event.target.closest('.input-group').querySelector('.form-control')
 
           $input.value = random(8)
           $input.dispatchEvent(new Event('input', { bubbles: true }))
@@ -56,9 +58,9 @@ export const FormControl = ({
         icon: 'eye',
         tabindex: -1,
         variant: 'info',
-        onClick: e => {
-          const $input = e.target.closest('.input-group').querySelector('.form-control')
-          const $icon = e.target.closest('[type=button]').querySelector('i[class^="bi-"]')
+        onClick: ({ event }) => {
+          const $input = event.target.closest('.input-group').querySelector('.form-control')
+          const $icon = event.target.closest('[type=button]').querySelector('i[class^="bi-"]')
           const plain = $icon.classList.contains('bi-eye-slash')
 
           if (plain) {
@@ -244,7 +246,7 @@ export const FormGroup = ({
   )
 }
 
-export default ({
+function Form({
   processing,
   controls = [],
   method = 'POST',
@@ -270,7 +272,7 @@ export default ({
   choices,
   modifyInput = () => ({}),
   ...props
-}) => {
+}) {
   return (
     <form method={method} {...props}>
       {message && <Alert message={message} variant={messageVariant} />}

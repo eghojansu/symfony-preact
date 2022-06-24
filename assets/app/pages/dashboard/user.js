@@ -1,10 +1,12 @@
-import { withContext } from '@app/context'
+import { withGranted } from '@app/context'
 import useTree from '@app/lib/tree'
 import { Nav } from '@app/components/tree'
 import Crud from '@app/components/crud'
 import Form from '@app/components/form-auto'
 
-export default withContext(() => {
+export default withGranted(MainPage)
+
+function MainPage() {
   const endpoint = '/api/user'
   const table = {
     columns: [
@@ -115,7 +117,7 @@ export default withContext(() => {
       endpoint={endpoint}
       source={table} />
   )
-})
+}
 
 const CreatePage = ({ formProps }) => {
   return (
@@ -133,30 +135,35 @@ const EditPage = ({ tab: { data: { item } }, formProps: { action, ...formProps }
     <>
       <Nav items={items} activeId={activeId} onSelect={handleTabSelect} variant="tabs" />
       <div class="pt-3">
-        {'Data' === activeId && <Form action={action} {...formProps} />}
-        {'Access' === activeId && <Form {...{
-          action: `${action}/access`,
-          method: 'PATCH',
-          controls: [
-            {
-              name: 'roles',
-              type: 'choice',
-              multiple: true,
-              break: true,
-              value: item?.roles,
-              source: '/api/data/roles',
-            },
-            {
-              name: 'newPassword',
-              label: 'Password',
-              type: 'password',
-              view: true,
-              generate: true,
-              break: true,
-            },
-          ],
-          onCancel: () => setActive('Data'),
-        }} />}
+        {
+          ('Data' === activeId && <Form action={action} {...formProps} />)
+          || (
+            'Access' === activeId && <Form {...{
+              action: `${action}/access`,
+              method: 'PATCH',
+              controls: [
+                {
+                  name: 'roles',
+                  type: 'choice',
+                  multiple: true,
+                  break: true,
+                  value: item?.roles,
+                  source: '/api/data/roles',
+                },
+                {
+                  name: 'newPassword',
+                  label: 'Password',
+                  type: 'password',
+                  view: true,
+                  generate: true,
+                  break: true,
+                },
+              ],
+              onCancel: () => setActive('Data'),
+            }} />
+          )
+          || null
+        }
       </div>
     </>
   )
