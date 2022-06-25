@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Entity\Concern\CurrentUser;
 use App\Utils;
+use App\Validator as CustomAssert;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\CsuserRepository;
 use Doctrine\Common\Collections\Collection;
@@ -46,7 +47,7 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
     private $active;
 
     #[ORM\Column(type: 'simple_array', nullable: true)]
-    #[Assert\Choice(callback: 'getRoleOptions', multiple: true, groups: array('access'))]
+    #[CustomAssert\Choice('roles', true, groups: array('access'))]
     private $roles = [];
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Cshist::class)]
@@ -63,13 +64,6 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->histories = new ArrayCollection();
-    }
-
-    public static function getRoleOptions(): array
-    {
-        return array(
-            static::ROLE_ADMIN => 'ROLE_ADMIN',
-        );
     }
 
     public static function create(

@@ -3,7 +3,7 @@
 namespace App\Form;
 
 use App\Entity\Csmenu;
-use App\Entity\Csuser;
+use App\Service\Choices;
 use App\Form\Extension\CheckboxType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -13,6 +13,10 @@ use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 
 class MenuType extends AbstractType
 {
+    public function __construct(
+        private Choices $choices,
+    ) {}
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         if ('POST' === $options['method']) {
@@ -29,7 +33,7 @@ class MenuType extends AbstractType
             ->add('matcher')
             ->add('roles', ChoiceType::class, array(
                 'multiple' => true,
-                'choices' => Csuser::getRoleOptions(),
+                'choices' => $this->choices->roles(),
             ))
             ->add('parent', EntityType::class, array(
                 'class' => Csmenu::class,

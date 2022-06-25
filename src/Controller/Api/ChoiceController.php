@@ -2,17 +2,21 @@
 
 namespace App\Controller\Api;
 
-use App\Entity\Csuser;
+use App\Service\Choices;
 use Symfony\Component\Routing\Annotation\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 
 #[Route('/api/data')]
-class DataController extends Controller
+class ChoiceController extends Controller
 {
+    public function __construct(
+        private Choices $choices,
+    ) {}
+
     #[Route('/roles', methods: 'GET')]
     #[IsGranted('ROLE_ADMIN')]
     public function roles()
     {
-        return $this->api->source(Csuser::getRoleOptions());
+        return $this->api->source($this->choices->roles());
     }
 }

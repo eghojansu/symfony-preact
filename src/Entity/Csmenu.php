@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Utils;
+use App\Validator as CustomAssert;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\CsmenuRepository;
 use Doctrine\Common\Collections\Collection;
@@ -57,7 +58,7 @@ class Csmenu
     private $children;
 
     #[ORM\Column(type: 'simple_array', nullable: true)]
-    #[Assert\Choice(callback: array(Csuser::class, 'getRoleOptions'), multiple: true, groups: array('access'))]
+    #[CustomAssert\Choice('roles', true, groups: array('access'))]
     private $roles = [];
 
     #[ORM\Column(type: 'smallint', nullable: true)]

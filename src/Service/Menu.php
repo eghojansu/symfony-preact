@@ -73,6 +73,7 @@ class Menu
             'order' => $menu->getPriority(),
             'active' => $menu->isActive(),
             'hidden' => $menu->isHidden(),
+            'roles' => $menu->getRoles(),
         ) + compact('parent', 'items');
     }
 
