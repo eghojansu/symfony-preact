@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { withGranted } from '@app/context'
 import { clsx, normalizeMenu } from '@app/lib/common'
+import notify, { confirm } from '@app/lib/notify'
 import useTree from '@app/lib/tree'
 import Panel from '@app/components/panel'
-import { Nav } from '@app/components/tree'
+import Form from '@app/components/form-auto'
 import { IconSpinner, IconLabel } from '@app/components/visual'
 import { Toolbar } from '@app/components/button'
 
@@ -12,6 +13,7 @@ export default withGranted(MainPage)
 function MainPage({
   ctx: {
     request,
+    loadMenu: refreshMenu,
   },
 }) {
   const controller = useRef(new AbortController())
@@ -25,14 +27,37 @@ function MainPage({
       text: 'Account Menu',
     },
   ]
+  const toolbar = {
+    groups: [
+      {
+        icon: 'arrow-clockwise',
+        variant: 'info',
+        onClick: () => refreshMenu(),
+      },
+    ],
+  }
   const [menu, menuSet] = useState({})
-  const { items, activeId, setActive, activeItem, addItem: addTab, handleTabSelect } = useTree([
-    { text: 'Menu' },
-  ])
+  const {
+    items,
+    activeId,
+    activeItem,
+    add: addTab,
+    handleTabSelect,
+    handleTabClose,
+  } = useTree(tree => {
+    tree.add('Menu')
+  }, null, tab => ({ ...tab, refresh: loadMenu }))
   const loadMenu = async () => {
-    const { data } = await request('/api/menu', { signal: controller.current.signal })
+    const params = {
+      roots: groups.map(group => group.id).join(','),
+    }
+    const { data } = await request(endpoint, {
+      params,
+      signal: controller.current.signal,
+    })
 
     menuSet(normalizeMenu(data))
+    refreshMenu()
   }
   const updatePos = (menu, tree, direction = 1) => {
     const last = tree.length - 1
@@ -53,10 +78,27 @@ function MainPage({
 
     return menu
   }
-  const createActionGroupHandler = group => ({ action: { id },  tree }) => {
-    const last = tree[tree.length - 1]
+  const updateDirection = async (url, dir) => {
+    const { success, message } = await request(
+      `${url}/sort`,
+      {
+        method: 'PATCH',
+        signal: controller.current.signal,
+        params: { dir },
+      }
+    )
+
+    if (success) {
+      notify(message, true)
+      refreshMenu()
+    }
+  }
+  const createActionGroupHandler = group => async ({ action: { id },  tree }) => {
+    const [item] = tree.slice(-1)
+    const url = `${endpoint}/${item.id}`
 
     if ('up' === id) {
+      updateDirection(url, id)
       menuSet(menu => ({
         ...menu,
         [group.id]: updatePos(menu[group.id], tree),
@@ -66,6 +108,7 @@ function MainPage({
     }
 
     if ('down' === id) {
+      updateDirection(url, id)
       menuSet(menu => ({
         ...menu,
         [group.id]: updatePos(menu[group.id], tree, -1),
@@ -75,11 +118,34 @@ function MainPage({
     }
 
     if ('add' === id) {
-      console.log(last)
-      addTab({
-        id: 'add',
-        text: `Add Child`,
+      addTab(`Add child of ${item.name}`, true, id, {
+        data: { parent: item },
       })
+
+      return
+    }
+
+    if ('edit' === id) {
+      const [parent] = tree.slice(-2)
+
+      addTab(`Edit ${item.name}`, true, id, {
+        data: { url, parent, item },
+      })
+
+      return
+    }
+
+    if ('remove' === id) {
+      const { isConfirmed, value: { success, message } = {} } = await confirm(
+        () => request(url, {
+          method: 'DELETE',
+        })
+      )
+
+      if (isConfirmed && success) {
+        notify(message, true)
+        loadMenu()
+      }
 
       return
     }
@@ -96,8 +162,13 @@ function MainPage({
   }, [])
 
   return (
-    <Panel title="Manage Menu">
-      <Nav items={items} activeId={activeId} onSelect={handleTabSelect} variant="tabs" />
+    <Panel
+      title="Manage Menu"
+      toolbar={toolbar}
+      items={items}
+      activeId={activeId}
+      onTabClose={handleTabClose}
+      onTabSelect={handleTabSelect}>
       {
         ('Menu' === activeId && (
           <MainTab
@@ -105,14 +176,16 @@ function MainPage({
             menu={menu}
             createActionGroupHandler={createActionGroupHandler} />
         ))
-        || ('add' === activeItem.id && (
-          <CreateForm />
+        || (['add', 'edit'].includes(activeItem?.id) && (
+          <MenuForm key={activeItem.text} tab={activeItem} />
         ))
         || null
       }
     </Panel>
   )
 }
+
+const endpoint = '/api/menu'
 
 const MainTab = ({
   groups,
@@ -130,13 +203,91 @@ const MainTab = ({
     ))}
   </div>
 )
-const CreateForm = ({
-
+const MenuForm = ({
+  tab: {
+    close,
+    refresh,
+    data: {
+      parent,
+      item,
+      url,
+    },
+  },
 }) => {
+  const action = url || endpoint
+  const method = item ? 'PUT' : 'POST'
+  const extra = {
+    parent: parent.id,
+  }
+  const controls = [
+    {
+      name: 'parentInfo',
+      value: `${parent.id} (${parent.path || '~'})`,
+      label: `Parent: ${parent.name}`,
+      plain: true,
+      extra: { ignore: true },
+    },
+    {
+      name: 'id',
+      label: 'Menu ID',
+      required: true,
+      maxlength: 10,
+      once: true,
+    },
+    {
+      name: 'name',
+      required: true,
+    },
+    {
+      name: 'path',
+      required: true,
+    },
+    {
+      name: 'matcher',
+    },
+    {
+      name: 'hint',
+    },
+    {
+      name: 'active',
+      type: 'checkbox',
+      value: '1',
+      break: true,
+    },
+    {
+      name: 'hidden',
+      type: 'checkbox',
+      value: '1',
+    },
+    {
+      name: 'roles',
+      type: 'choice',
+      multiple: true,
+      break: true,
+      source: '/api/data/roles',
+    },
+    {
+      name: 'icon',
+    },
+  ]
+  const handleSuccess = () => {
+    refresh()
+    close()
+  }
+
   return (
-    <div>Form</div>
+    <Form
+      class="row g-3"
+      extra={extra}
+      action={action}
+      method={method}
+      initials={item}
+      controls={controls}
+      onCancel={close}
+      afterSuccess={handleSuccess} />
   )
 }
+
 const Tree = ({
   items,
   class: clsa,
@@ -164,16 +315,14 @@ const TreeItem = ({
   onAction,
 }) => {
   const {
-    text,
+    name: text,
     icon,
     items,
-    active,
   } = item
   const hasChildren = items?.length > 0
   const itemAttr = {
     class: clsx(
       'list-group-item d-flex editable-menu-row',
-      active && 'active',
     ),
   }
   const handleClick = ({ item: action }) => onAction && onAction({

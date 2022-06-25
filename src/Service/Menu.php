@@ -25,17 +25,72 @@ class Menu
 
     public function getTree(bool $activable, string ...$roots): array
     {
-        $rows = $roots ? $this->repo->getMenu() : array();
+        return $roots ? $this->buildTree(
+            $roots,
+            $this->repo->getMenu(),
+            'client',
+            $activable,
+        ) : array();
+    }
 
+    public function getAll(string ...$roots): array
+    {
+        return $roots ? $this->buildTree(
+            $roots,
+            $this->repo->findAll(),
+        ) : array();
+    }
+
+    private function serializeForClient(
+        Csmenu $menu,
+        string $parent,
+        array $items,
+        bool $activable,
+    ): array {
+        return array(
+            'id' => $menu->getId(),
+            'url' => $menu->getPath(),
+            'text' => $menu->getName(),
+            'hint' => $menu->getHint(),
+            'icon' => $menu->getIcon(),
+            'order' => $menu->getPriority(),
+            'attrs' => $menu->getAttrs(),
+            'active' => $activable && $this->active($menu, $items),
+        ) + compact('parent', 'items');
+    }
+
+    private function serializeForEditing(
+        Csmenu $menu,
+        string $parent,
+        array $items,
+    ): array {
+        return array(
+            'id' => $menu->getId(),
+            'path' => $menu->getPath(),
+            'name' => $menu->getName(),
+            'hint' => $menu->getHint(),
+            'icon' => $menu->getIcon(),
+            'order' => $menu->getPriority(),
+            'active' => $menu->isActive(),
+            'hidden' => $menu->isHidden(),
+        ) + compact('parent', 'items');
+    }
+
+    private function buildTree(
+        array $roots,
+        array $rows,
+        string $target = 'editing',
+        bool $activable = false,
+    ): array {
         return Utils::reduce(
             $roots,
             fn (array|null $menu, string $root) => array_merge($menu ?? array(), array(
-                $root => $this->build($root, $rows, $activable),
+                $root => $this->build($root, $rows, $target, $activable),
             )),
         );
     }
 
-    private function build(string $parent, array $rows, bool $activable): array
+    private function build(string $parent, array $rows, string $target, bool $activable): array
     {
         $menu = Utils::reduce(
             $rows,
@@ -44,7 +99,7 @@ class Menu
                 Csmenu $row,
                 $key,
                 array $rows,
-            ) use ($parent, $activable) {
+            ) use ($parent, $target, $activable) {
                 if (
                     $parent !== $row->getParent()?->getId()
                     || $this->skip($row)
@@ -52,18 +107,12 @@ class Menu
                     return $menu;
                 }
 
-                $items = $this->build($row->getId(), $rows, $activable);
-                $active = $activable && $this->active($row, $items);
+                $items = $this->build($row->getId(), $rows, $target, $activable);
 
-                $menu[$row->getId()] = array(
-                    'id' => $row->getId(),
-                    'url' => $row->getPath(),
-                    'text' => $row->getName(),
-                    'hint' => $row->getHint(),
-                    'icon' => $row->getIcon(),
-                    'order' => $row->getPriority(),
-                    'attrs' => $row->getAttrs(),
-                ) + compact('active', 'parent', 'items');
+                $menu[$row->getId()] = match($target) {
+                    'editing' => $this->serializeForEditing($row, $parent, $items),
+                    default => $this->serializeForClient($row, $parent, $items, $activable),
+                };
 
                 return $menu;
             },

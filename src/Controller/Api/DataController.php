@@ -13,11 +13,6 @@ class DataController extends Controller
     #[IsGranted('ROLE_ADMIN')]
     public function roles()
     {
-        return $this->api->rest(array(
-            'items' => array_filter(
-                Csuser::ROLES,
-                static fn (string $role) => 'ROLE_ROOT' !== $role,
-            ),
-        ));
+        return $this->api->source(Csuser::getRoleOptions());
     }
 }

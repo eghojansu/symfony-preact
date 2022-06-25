@@ -19,6 +19,8 @@ export const FormControl = ({
   view,
   generate,
   disabled,
+  readonly,
+  plain,
   id: originalId,
   items,
   extra,
@@ -190,7 +192,8 @@ export const FormControl = ({
         <input {...{
           placeholder: text,
           ...props,
-          class: clsx('form-control', feedbackState, clsa),
+          class: clsx(plain ? 'form-control-plaintext' : 'form-control', feedbackState, clsa),
+          readonly: readonly || plain ? true : false,
           disabled,
           value,
           type,
@@ -217,7 +220,8 @@ export const FormControl = ({
 export const FormGroup = ({
   name = 'control',
   type = 'text',
-  grid = 4,
+  width = 4,
+  breakpoint,
   label,
   placeholder,
   rootClass,
@@ -231,7 +235,8 @@ export const FormGroup = ({
 
   return (
     <>
-      <div class={clsx(grid && `col-${grid}`, rootClass)}>
+      {width && enter && <div class="w-100"></div>}
+      <div class={clsx(width && `col-${breakpoint ? `${breakpoint}-` : ''}${width}`, rootClass)}>
         {labelElement}
         <FormControl {...{
           name,
@@ -241,7 +246,6 @@ export const FormGroup = ({
           ...controlProps,
         }} />
       </div>
-      {grid && enter && <div class="w-100 mb-3"></div>}
     </>
   )
 }
@@ -250,6 +254,7 @@ function Form({
   processing,
   controls = [],
   method = 'POST',
+  class: clsa = 'row g-3',
   actionClass = 'col-12 pt-3',
   actionSubmit = {
     variant: 'primary',
@@ -270,13 +275,12 @@ function Form({
   values,
   errors,
   choices,
-  modifyInput = () => ({}),
   ...props
 }) {
   return (
-    <form method={method} {...props}>
+    <form method={method} class={clsa || null} {...props}>
       {message && <Alert message={message} variant={messageVariant} />}
-      {controls.map(({ id, name, value, type, checked, disabled, ...input }, idx) => (
+      {controls.map(({ id, name, value, type, checked, disabled, once, ...input }, idx) => (
         <FormGroup
           key={id || name || idx}
           {...{
@@ -284,11 +288,10 @@ function Form({
             name,
             type,
             value: !isCheck(type) && values && name && name in values ? values[name] : (undefined === value ? '' : value),
-            disabled: disabled || processing,
+            disabled: disabled || processing || (once && undefined !== value),
             ...(isCheck(type) && values && name in values ? { checked: value == values[name] } : { checked }),
             ...(errors && name && name in errors ? { invalid: !!errors[name], message: errors[name] } : {}),
             ...(choices && name && name in choices ? { items: choices[name] } : {}),
-            ...modifyInput({ id, name, value, type, checked, disabled, ...input }),
             ...input,
           }} />
       ))}

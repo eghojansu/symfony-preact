@@ -17,8 +17,8 @@ export const clsr = (...args) => args.reduce((args, val) => {
 export const clsx = (...args) => clsr(...args).join(' ') || null
 export const caseJoin = (str, join = '', lowerFirst = false) => str.replace(
   /(?:^\w|[A-Z]|\b\w)/g,
-  (c, i) => c === c.toUpperCase() ? `_${c}` : (
-    i === 0 && lowerFirst ? c.toLowerCase() : c.toUpperCase()
+  (c, i) => i === 0 && lowerFirst ? c.toLowerCase() : (
+    c === c.toUpperCase() ? `_${c}` : c.toUpperCase()
   ),
 ).replace(/[\W_]+/g, join)
 export const caseTitle = str => caseJoin(str, ' ')
@@ -90,6 +90,6 @@ export const normalizeMenu = menu => {
   }))
 
   return Object.fromEntries(
-    Object.entries(menu).map(([root, menu]) => [root, norm(menu)]),
+    Object.entries(menu || {}).map(([root, menu]) => [root, norm(menu)]),
   )
 }

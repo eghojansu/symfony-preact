@@ -15,7 +15,7 @@ class UserAccessType extends AbstractType
         $builder
             ->add('roles', ChoiceType::class, array(
                 'multiple' => true,
-                'choices' => Csuser::ROLES,
+                'choices' => Csuser::getRoleOptions(),
             ))
             ->add('newPassword')
         ;

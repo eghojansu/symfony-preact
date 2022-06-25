@@ -13,14 +13,10 @@ function MainPage ({
     {
       name: 'name',
       required: true,
-      break: true,
-      value: user?.name,
     },
     {
       name: 'email',
       type: 'email',
-      break: true,
-      value: user?.email,
     },
     {
       name: 'currentPassword',
@@ -34,6 +30,7 @@ function MainPage ({
 
   return (
     <Form
+      initials={user}
       controls={controls}
       afterSuccess={afterSuccess}
       action="/api/account/update"

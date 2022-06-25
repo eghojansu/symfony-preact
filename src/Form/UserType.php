@@ -3,8 +3,8 @@
 namespace App\Form;
 
 use App\Entity\Csuser;
+use App\Form\Extension\CheckboxType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -12,13 +12,14 @@ class UserType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        if ('POST' === $options['method']) {
+            $builder->add('id');
+        }
+
         $builder
-            ->add('id')
             ->add('name')
             ->add('email')
-            ->add('active', CheckboxType::class, array(
-                'false_values' => array(null, '', 0, '0', 'off'),
-            ))
+            ->add('active', CheckboxType::class)
         ;
     }
 

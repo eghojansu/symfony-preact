@@ -15,19 +15,17 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Serializer\Annotation\Ignore;
 
 #[ORM\Entity(repositoryClass: CsuserRepository::class)]
-#[UniqueEntity('id')]
+#[UniqueEntity('id', groups: array('create'))]
 class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    const ROLES = array(
-        'Admin' => 'ROLE_ADMIN',
-        'Root' => 'ROLE_ROOT',
-    );
+    const ROLE_ADMIN = 'Admin';
+    const ROLE_ROOT = 'Root';
 
     #[ORM\Id]
     #[ORM\GeneratedValue('NONE')]
     #[ORM\Column(type: 'string', length: 8, name: 'userid')]
-    #[Assert\NotBlank()]
-    #[Assert\Length(min: 5, max: 8)]
+    #[Assert\NotBlank(groups: array('create'))]
+    #[Assert\Length(min: 5, max: 8, groups: array('create'))]
     private $id;
 
     #[ORM\Column(type: 'string', length: 32)]
@@ -48,7 +46,7 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
     private $active;
 
     #[ORM\Column(type: 'simple_array', nullable: true)]
-    #[Assert\Choice(choices: self::ROLES, multiple: true, groups: array('access'))]
+    #[Assert\Choice(callback: 'getRoleOptions', multiple: true, groups: array('access'))]
     private $roles = [];
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Cshist::class)]
@@ -65,6 +63,13 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->histories = new ArrayCollection();
+    }
+
+    public static function getRoleOptions(): array
+    {
+        return array(
+            static::ROLE_ADMIN => 'ROLE_ADMIN',
+        );
     }
 
     public static function create(

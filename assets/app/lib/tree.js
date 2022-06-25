@@ -1,19 +1,19 @@
-import { useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'preact/hooks'
+import { caseCamel, random } from './common'
 
 export default tree
 
-export const itemMatcher = check => item => (
-  (item?.url && item.url === check)
-  || (item?.id && item.id === check)
-  || (item?.text && item.text === check)
-)
+export const itemMatcher = (value, ...keys) => item => item && (
+  keys.concat(['url', 'id', 'text'])
+).some(key => key in item && item[key] == value)
 
-function tree(initialItems, initialActive, idKey = 'text') {
-  const [items, itemsSet] = useState(initialItems || [])
-  const [activeId, activeIdSet] = useState(initialActive || (initialItems ? initialItems[0][idKey] : ''))
-  const activeItem = useMemo(() => items.find(itemMatcher(activeId)), [items, activeId])
+function tree(initialize, withIdKey, extend = (tab => tab)) {
+  const idKey = withIdKey || 'text'
+  const [items, itemsSet] = useState([])
+  const [activeId, activeIdSet] = useState()
+  const activeItem = useMemo(() => items.find(itemMatcher(activeId, idKey)), [items, activeId])
   const addItem = (item, update) => {
-    const existing = items.find(itemMatcher(item[idKey]))
+    const existing = items.find(itemMatcher(item[idKey], idKey))
 
     if (existing && update) {
       const pos = items.indexOf(existing)
@@ -29,8 +29,29 @@ function tree(initialItems, initialActive, idKey = 'text') {
 
     activeIdSet(item[idKey])
   }
+  const add = (text, close, withId, tab = {}, update) => {
+    const id = withId || caseCamel(text)
+    const key = 'text' === idKey ? text : (
+      'id' === idKey ? id : ((tab && tab[idKey]) || random())
+    )
+
+    addItem(
+      extend({
+        ...tab,
+        id,
+        text,
+        attrs: {
+          title: text,
+          ...(tab.attrs || {}),
+        },
+        setData: (data, replace) => setData(key, data, replace),
+        ...(close ? { closable: true, close: () => removeItem(key) } : {}),
+      }),
+      update,
+    )
+  }
   const removeItem = id => itemsSet(items => {
-    const pos = items.findIndex(itemMatcher(id))
+    const pos = items.findIndex(itemMatcher(id, idKey))
     const newItems = [...items.slice(0, pos), ...items.slice(pos + 1)]
     const nextActive = (newItems[pos] || newItems[0])
 
@@ -41,7 +62,7 @@ function tree(initialItems, initialActive, idKey = 'text') {
     return newItems
   })
   const setData = (id, data, replace) => itemsSet(items => {
-    const pos = items.findIndex(itemMatcher(id))
+    const pos = items.findIndex(itemMatcher(id, idKey))
 
     if (pos < 0) {
       return items
@@ -66,11 +87,11 @@ function tree(initialItems, initialActive, idKey = 'text') {
   }
   const handleTabClose = ({ item }) => removeItem(item[idKey])
   const handleTabSelect = ({ item }) => activeIdSet(item[idKey])
-
-  return {
+  const tree = {
     items,
     activeId,
     activeItem,
+    add,
     reset,
     addItem,
     removeItem,
@@ -79,4 +100,10 @@ function tree(initialItems, initialActive, idKey = 'text') {
     handleTabClose,
     handleTabSelect,
   }
+
+  useEffect(() => {
+    initialize && initialize(tree)
+  }, [])
+
+  return tree
 }

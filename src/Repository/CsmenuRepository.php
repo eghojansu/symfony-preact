@@ -40,8 +40,8 @@ class CsmenuRepository extends ServiceEntityRepository
     }
 
     /**
-        * @return Csmenu[] Returns an array of Csmenu objects
-        */
+     * @return Csmenu[]
+     */
     public function getMenu(): array
     {
         $qb = $this->createQueryBuilder('a');
@@ -76,5 +76,51 @@ class CsmenuRepository extends ServiceEntityRepository
         ) + compact('path'));
 
         return $qb->getQuery()->getOneOrNullResult();
+    }
+
+    public function getNextChildPriority(Csmenu $parent): int
+    {
+        $qb = $this->createQueryBuilder('a');
+        $qb->where('a.parent = :parent');
+        $qb->orderBy('a.priority', 'DESC');
+        $qb->setMaxResults(1);
+        $qb->setParameters(compact('parent'));
+
+        $found = $qb->getQuery()->getOneOrNullResult();
+
+        return ($found?->getPriority() ?? 0) + 1;
+    }
+
+    public function removeSorted(Csmenu $menu): void
+    {
+        $this->doOrder($menu->getParent()->getChildren(), $menu);
+
+        $this->getEntityManager()->remove($menu);
+        $this->getEntityManager()->flush();
+    }
+
+    public function reSort(Csmenu $menu, string $direction): void
+    {
+        $children = $menu->getParent()->getChildren()->toArray();
+        $pos = array_search($menu, $children, true);
+        $move = $pos - ('down' === $direction ? -1 : 1);
+
+        $children[$pos] = $children[$move];
+        $children[$move] = $menu;
+
+        $this->doOrder($children);
+
+        $this->getEntityManager()->flush();
+    }
+
+    private function doOrder(iterable $items, Csmenu $ignore = null): void
+    {
+        $priority = 0;
+
+        foreach ($items as $item) {
+            if (!$ignore || $item !== $ignore) {
+                $item->setPriority(++$priority);
+            }
+        }
     }
 }

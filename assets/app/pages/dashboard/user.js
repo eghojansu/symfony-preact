@@ -1,115 +1,12 @@
 import { withGranted } from '@app/context'
 import useTree from '@app/lib/tree'
-import { Nav } from '@app/components/tree'
-import Crud from '@app/components/crud'
+import { NavTab } from '@app/components/tree'
+import Crud, { CrudForm } from '@app/components/crud'
 import Form from '@app/components/form-auto'
 
 export default withGranted(MainPage)
 
 function MainPage() {
-  const endpoint = '/api/user'
-  const table = {
-    columns: [
-      {
-        name: 'id',
-        text: 'User ID',
-        key: true,
-      },
-      {
-        name: 'name',
-      },
-      {
-        name: 'active',
-      },
-    ],
-  }
-  const getFormProps = ({
-    close,
-    refresh,
-    setData,
-    data: { item, url: action = endpoint } = {},
-  }) => {
-    const props = {
-      action,
-      controls: [
-        {
-          name: 'id',
-          label: 'User ID',
-          minlength: 5,
-          maxlength: 8,
-          required: true,
-          break: true,
-        },
-        {
-          name: 'name',
-          required: true,
-          break: true,
-        },
-        {
-          name: 'email',
-          type: 'email',
-          break: true,
-        },
-        {
-          name: 'active',
-          type: 'checkbox',
-          value: '1',
-          break: true,
-        },
-      ],
-      onCancel: () => close && close(),
-      afterSuccess: ({ values, reset }) => {
-        refresh()
-
-        if (values.close && close) {
-          close()
-        } else if (item) {
-          setData({ item: values })
-        } else {
-          reset()
-        }
-      },
-    }
-
-    if (item) {
-      props.method = 'PUT'
-      props.controls.forEach(prop => {
-        const { name, value, type } = prop
-
-        if (undefined === value && name in item) {
-          prop.value = item[name]
-        }
-
-        if ('checkbox' === type && name in item) {
-          prop.checked = prop.value == item[name]
-        }
-      })
-    } else {
-      props.controls.push({
-        name: 'close',
-        label: 'Close after saved',
-        type: 'checkbox',
-        value: '1',
-        checked: true,
-        break: true,
-        extra: { ignore: true }
-      })
-    }
-
-    return props
-  }
-  const renderContent = tab => {
-    const { id, text } = tab
-
-    if ('edit' === id) {
-      return <EditPage tab={tab} formProps={getFormProps(tab)} />
-    }
-
-    if ('Create' === text) {
-      return <CreatePage formProps={getFormProps(tab)} />
-    }
-  }
-
   return (
     <Crud
       title="Manage User"
@@ -119,48 +16,83 @@ function MainPage() {
   )
 }
 
-const CreatePage = ({ formProps }) => {
+const endpoint = '/api/user'
+const formProps = {
+  endpoint,
+  controls: [
+    {
+      name: 'id',
+      label: 'User ID',
+      minlength: 5,
+      maxlength: 8,
+      required: true,
+      once: true,
+    },
+    {
+      name: 'name',
+      required: true,
+      maxlength: 32,
+    },
+    {
+      name: 'active',
+      type: 'checkbox',
+      value: '1',
+      break: true,
+    },
+    {
+      name: 'email',
+      type: 'email',
+    },
+  ],
+}
+const table = {
+  columns: [
+    {
+      name: 'id',
+      text: 'User ID',
+      key: true,
+    },
+    {
+      name: 'name',
+    },
+    {
+      name: 'active',
+    },
+  ],
+}
+
+const renderContent = tab => (
+  ('edit' === tab?.id && <EditPage tab={tab} />)
+  || ('create' === tab?.id && <CreatePage tab={tab} />)
+  || null
+)
+
+const CreatePage = ({ tab }) => {
   return (
-    <Form {...formProps} />
+    <CrudForm tab={tab} {...formProps} />
   )
 }
 
-const EditPage = ({ tab: { data: { item } }, formProps: { action, ...formProps } }) => {
-  const { items, activeId, setActive, handleTabSelect } = useTree([
-    { text: 'Data' },
-    { text: 'Access' },
-  ], 'Access')
+const EditPage = ({ tab }) => {
+  const { data: { item, url: action } } = tab
+  const { items, activeId, setActive, handleTabSelect } = useTree(tree => {
+    tree.add('Data')
+    tree.add('Access')
+  })
 
   return (
     <>
-      <Nav items={items} activeId={activeId} onSelect={handleTabSelect} variant="tabs" />
+      <NavTab items={items} activeId={activeId} onSelect={handleTabSelect} />
       <div class="pt-3">
         {
-          ('Data' === activeId && <Form action={action} {...formProps} />)
+          ('Data' === activeId && (<CrudForm tab={tab} {...formProps} />))
           || (
-            'Access' === activeId && <Form {...{
-              action: `${action}/access`,
-              method: 'PATCH',
-              controls: [
-                {
-                  name: 'roles',
-                  type: 'choice',
-                  multiple: true,
-                  break: true,
-                  value: item?.roles,
-                  source: '/api/data/roles',
-                },
-                {
-                  name: 'newPassword',
-                  label: 'Password',
-                  type: 'password',
-                  view: true,
-                  generate: true,
-                  break: true,
-                },
-              ],
-              onCancel: () => setActive('Data'),
-            }} />
+            'Access' === activeId && (
+              <AccessForm
+                item={item}
+                action={`${action}/access`}
+                onCancel={() => setActive('Data')} />
+            )
           )
           || null
         }
@@ -168,3 +100,29 @@ const EditPage = ({ tab: { data: { item } }, formProps: { action, ...formProps }
     </>
   )
 }
+
+const AccessForm = ({
+  item,
+  ...formProps
+}) => (
+  <Form {...{
+    initials: item,
+    method: 'PATCH',
+    controls: [
+      {
+        name: 'roles',
+        type: 'choice',
+        multiple: true,
+        source: '/api/data/roles',
+      },
+      {
+        name: 'newPassword',
+        label: 'Password',
+        type: 'password',
+        view: true,
+        generate: true,
+      },
+    ],
+    ...formProps,
+  }} />
+)

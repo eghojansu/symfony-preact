@@ -6,6 +6,7 @@ import { ErrorPage } from './fallback'
 import Pagination, { PaginationInfo, PaginationSizer } from './pagination'
 import Panel from './panel'
 import Table from './table'
+import FormAuto from './form-auto'
 
 export default withContext(Crud)
 
@@ -36,19 +37,12 @@ function Crud ({
     total: 0,
     pages: 0,
   })
-  const createTab = (text, close, tab = {}) => ({
+  const tree = useTree(tree => {
+    tree.add('Main')
+  }, idKey, tab => ({
     ...tab,
-    ...(idKey === text ? {} : { [idKey]: text }),
-    text,
-    attrs: { title: text },
     refresh: loadPagination,
-    setData: (data, replace) => tree.setData(text, data, replace),
-    ...(close ? { closable: true, close: () => tree.removeItem(text) } : {}),
-  })
-  const tree = useTree([
-    createTab('Main'),
-    ...(initialItems || []),
-  ], null, idKey)
+  }))
   const toolbar = {
     label: 'Crud actions toolbar',
     ...(initialToolbar || {}),
@@ -58,7 +52,7 @@ function Crud ({
           text: 'New',
           icon: 'plus-circle',
           onClick: () => {
-            tree.addItem(createTab('Create', true))
+            tree.add('Create', true)
           }
         },
       ] : []),
@@ -70,7 +64,12 @@ function Crud ({
     const url = itemUrl(item, keys)
 
     if ('remove' === action) {
-      const { isConfirmed, value: { success, message } = {} } = await confirm(() => request(url, { method: 'DELETE' }))
+      const { isConfirmed, value: { success, message } = {} } = await confirm(
+        () => request(url, {
+          method: 'DELETE',
+          signal: controller.current.signal,
+        })
+      )
 
       if (isConfirmed && success) {
         notify(message, true)
@@ -83,10 +82,9 @@ function Crud ({
     if ('edit' === action) {
       const text = `Edit ${item[keys[0]]}`
 
-      tree.addItem(createTab(text, true, {
-        id: 'edit',
+      tree.add(text, true, 'edit', {
         data: { url, item, keys },
-      }))
+      })
 
       return
     }
@@ -101,7 +99,10 @@ function Crud ({
     loadingRef.current = setTimeout(async () => {
       loadingSet(true)
 
-      const { data: pagination } = await request(endpoint, { params, signal: controller.current.signal })
+      const { data: pagination } = await request(endpoint, {
+        params,
+        signal: controller.current.signal,
+      })
 
       paginationSet(pagination)
       loadingSet(false)
@@ -174,5 +175,58 @@ const MainContent = ({
         </div>
       )}
     </>
+  )
+}
+
+export const CrudForm = ({
+  endpoint,
+  tab: {
+    close,
+    refresh,
+    setData,
+    data: { item, url } = {},
+  },
+  controls = [],
+  ...formProps
+}) => {
+  const method = item ? 'PUT' : 'POST'
+  const action = url || endpoint
+  const useControls = [
+    ...controls,
+    ...(item ? [] : [
+      {
+        name: 'close',
+        label: 'Close after saved',
+        type: 'checkbox',
+        value: '1',
+        checked: true,
+        break: true,
+        extra: { ignore: true }
+      }
+    ]),
+  ]
+  const handleCancel = () => close && close()
+  const handleSuccess = ({ values, reset }) => {
+    refresh()
+
+    if (values.close && close) {
+      close()
+    } else if (item) {
+      setData({ item: values })
+    } else {
+      reset()
+    }
+  }
+
+  return (
+    <FormAuto {...{
+      method,
+      action,
+      initials: item,
+      controls: useControls,
+      onCancel: handleCancel,
+      afterSuccess: handleSuccess,
+      ...formProps
+    }} />
   )
 }

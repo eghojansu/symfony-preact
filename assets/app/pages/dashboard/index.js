@@ -48,7 +48,7 @@ const TopNavigation = ({
   menu,
   currentUrl,
 }) => (
-  <nav class="navbar navbar-expand-lg bg-light">
+  <nav class="navbar navbar-expand-lg bg-light sticky-top">
     <div class="container-fluid">
       <button class="navbar-toggler d-block me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbar-side" aria-controls="navbar-side" aria-expanded="false" aria-label="Toggle side navigation">
         <span class="navbar-toggler-icon"></span>

@@ -31,7 +31,7 @@ class Api
 
     public function json(
         mixed $data,
-        int $status = 200,
+        int $status = null,
         array $headers = null,
         array $context = null,
     ): JsonResponse {
@@ -39,7 +39,17 @@ class Api
             'json_encode_options' => JsonResponse::DEFAULT_ENCODING_OPTIONS,
         ), $context ?? array()));
 
-        return new JsonResponse($json, $status, $headers ?? array(), true);
+        return new JsonResponse($json, $status ?? Response::HTTP_OK, $headers ?? array(), true);
+    }
+
+    public function source(
+        mixed $items = null,
+        string $message = null,
+        array $headers = null,
+    ): JsonResponse {
+        $payload = array_filter(compact('message', 'items'));
+
+        return $this->json($payload, null, $headers);
     }
 
     public function rest(
@@ -52,7 +62,7 @@ class Api
         $payload = compact('success') + array_filter(compact('message', 'data'));
         $status = $code ?? ($success ? Response::HTTP_OK : Response::HTTP_UNPROCESSABLE_ENTITY);
 
-        return $this->json($payload, $status, $headers ?? array());
+        return $this->json($payload, $status, $headers);
     }
 
     public function message(

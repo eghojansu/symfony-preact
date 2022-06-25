@@ -25,7 +25,9 @@ class UserController extends Controller
     #[Route('', methods: 'POST')]
     public function store()
     {
-        $this->api->handleJson(UserType::class, new Csuser(), true);
+        $this->api->handleJson(UserType::class, new Csuser(), true, array(
+            'validation_groups' => array('Default', 'create'),
+        ));
 
         return $this->api->saved();
     }
@@ -33,7 +35,7 @@ class UserController extends Controller
     #[Route('/{user}', methods: 'PUT')]
     public function update(Csuser $user)
     {
-        $this->api->handleJson(UserType::class, $user, true, array(
+        $this->api->handleJson(UserType::class, $user, false, array(
             'method' => 'PUT',
         ));
 

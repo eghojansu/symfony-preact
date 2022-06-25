@@ -15,19 +15,79 @@ function FormAuto({
   afterSubmit,
   afterSuccess,
   afterComplete,
+  initials,
+  extra = {},
+  controls,
   action,
   method = 'POST',
   ...formProps
 }) {
   const fetches = useRef({})
-  const fields = useRef({})
   const controller = useRef(new AbortController())
   const [state, stateSet] = useState({
     processing: false,
     message: null,
-    values: {},
+    values: initials || {},
     errors: {},
     choices: {},
+  })
+  const useControls = controls.map(control => {
+    const { name, once, multiple, expanded, source, type } = control
+    const hasValue = initials && name in initials
+    const update = {}
+
+    if (once && hasValue) {
+      update.disabled = true
+    }
+
+    if (source && !(name in fetches.current)) {
+      fetches.current[name] = {
+        source,
+        fetched: false,
+      }
+    }
+
+    if (isCheck(type)) {
+      update.onClick = e => {
+        setValues({ [name]: e.target.checked ? e.target.value : '' })
+        setErrors({ [name]: e.target.validationMessage })
+      }
+    } else if (isChoice(type)) {
+      if (expanded) {
+        update.onClick = e => {
+          let value
+
+          if (multiple) {
+            value = Array.isArray(state.values[name]) ? [...state.values[name]] : [state.values[name]].filter(val => undefined !== val)
+
+            if (e.target.checked) {
+              value.push(e.target.value)
+            } else if (value.indexOf(e.target.value) > -1) {
+              value.splice(value.indexOf(e.target.value), 1)
+            }
+          } else {
+            value = e.target.checked ? e.target.value : ''
+          }
+
+          setValues({ [name]: value })
+          setErrors({ [name]: state.errors[name] || e.target.validationMessage })
+        }
+      } else {
+        update.onChange = e => {
+          const value = multiple ? Array.from(e.target.selectedOptions, option => option.value).filter(v => '' !== v) : e.target.value
+
+          setValues({ [name]: value })
+          setErrors({ [name]: e.target.validationMessage })
+        }
+      }
+    } else {
+      update.onInput = e => {
+        setValues({ [name]: e.target.value })
+        setErrors({ [name]: e.target.validationMessage })
+      }
+    }
+
+    return { ...control, ...update }
   })
   const stateSetter = (name, initials = {}) => updates => stateSet(state => ({
     ...state,
@@ -40,6 +100,7 @@ function FormAuto({
   const setErrors = stateSetter('errors')
   const setChoices = stateSetter('choices')
   const setMessage = stateSetter('message', '')
+  const setProcessing = stateSetter('processing', false)
   const loadSources = async () => {
     const fetchItems = async url => {
       const { data } = await request(url, { signal: controller.current.signal })
@@ -49,7 +110,7 @@ function FormAuto({
           return data.items
         }
 
-        if ('object' === typeof data.items) {
+        if (data.items && 'object' === typeof data.items) {
           return Object.entries(data.items).map(([text, id]) => ({ id, text }))
         }
       }
@@ -69,85 +130,19 @@ function FormAuto({
       )
     )
   }
-  const handleInit = (input) => {
-    if (!input?.name) {
-      return {}
-    }
-
-    const { name, type, expanded, multiple, source } = input
-
-    fields.current[name] = input
-
-    if (isCheck(type)) {
-      return {
-        onClick: e => {
-          setValues({ [name]: e.target.checked ? e.target.value : '' })
-          setErrors({ [name]: e.target.validationMessage })
-        }
-      }
-    }
-
-    if (source && !(name in fetches.current)) {
-      fetches.current[name] = {
-        source,
-        fetched: false,
-      }
-    }
-
-    if (isChoice(type)) {
-      if (expanded) {
-        return {
-          onClick: e => {
-            let value
-
-            if (multiple) {
-              value = Array.isArray(state.values[name]) ? [...state.values[name]] : [state.values[name]].filter(val => undefined !== val)
-
-              if (e.target.checked) {
-                value.push(e.target.value)
-              } else if (value.indexOf(e.target.value) > -1) {
-                value.splice(value.indexOf(e.target.value), 1)
-              }
-            } else {
-              value = e.target.checked ? e.target.value : ''
-            }
-
-            setValues({ [name]: value })
-            setErrors({ [name]: state.errors[name] || e.target.validationMessage })
-          }
-        }
-      }
-
-      return {
-        onChange: e => {
-          const value = multiple ? Array.from(e.target.selectedOptions, option => option.value).filter(v => '' !== v) : e.target.value
-
-          setValues({ [name]: value })
-          setErrors({ [name]: e.target.validationMessage })
-        },
-      }
-    }
-
-    return {
-      onInput: e => {
-        setValues({ [name]: e.target.value })
-        setErrors({ [name]: e.target.validationMessage })
-      },
-    }
-  }
   const handleSubmit = async event => {
     event.preventDefault()
 
-    const ignores = []
+    const picks = []
     const update = {
       values: {},
       errors: {},
     }
 
-    Object.entries(fields.current).forEach(
-      ([name, { type, expanded, multiple, extra: { ignore } = {} }]) => {
-        if (ignore) {
-          ignores.push(name)
+    controls.forEach(
+      ({ name, type, once, expanded, multiple, extra: { ignore } = {} }) => {
+        if (!ignore && (!once || !initials || !(name in initials))) {
+          picks.push(name)
         }
 
         const check = isCheck(type)
@@ -214,7 +209,7 @@ function FormAuto({
       )
     }
 
-    stateSet(state => ({ ...state, processing: true }))
+    setProcessing(true)
 
     if (onSubmit) {
       await onSubmit({ ...args, reset })
@@ -223,13 +218,15 @@ function FormAuto({
       const response = await request(action, {
         method,
         signal: controller.current.signal,
-        data: (() => {
-          const values = { ...update.values, ...state.values }
-
-          ignores.forEach(ignore => delete values[ignore])
-
-          return values
-        })(),
+        data: {
+          ...extra,
+          ...Object.fromEntries(
+            picks.map(name => [
+              name,
+              name in args.values ? args.values[name] : null
+            ])
+          ),
+        },
       })
       const { success, message, data, errors } = response
 
@@ -289,7 +286,7 @@ function FormAuto({
       notify('Unhandled form')
     }
 
-    stateSet(state => ({ ...state, processing: false }))
+    setProcessing(false)
   }
 
   useEffect(() => {
@@ -304,8 +301,8 @@ function FormAuto({
   return (
     <Form
       onSubmit={handleSubmit}
-      modifyInput={handleInit}
       novalidate={true}
+      controls={useControls}
       {...state}
       {...formProps} />
   )

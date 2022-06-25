@@ -10,7 +10,6 @@ function MainPage() {
       required: true,
       view: true,
       generate: true,
-      break: true,
     },
     {
       name: 'currentPassword',

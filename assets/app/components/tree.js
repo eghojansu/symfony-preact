@@ -161,6 +161,8 @@ export const Nav = ({
   </ul>
 )
 
+export const NavTab = props => (<Nav variant="tabs" {...props} />)
+
 const ListGroupItem = ({
   item,
   flush,

@@ -293,6 +293,7 @@ function AppProvider({ children }) {
     logout,
     fetchUser,
     isGranted,
+    loadMenu,
   }
 
   useEffect(() => {
