@@ -18,7 +18,7 @@ class UserController extends Controller
     {
         return $this->api->paginate(Csuser::class, array(
             'id <>' => 'su',
-            'id <> self id' => $this->user->getId(),
+            'id <> self id' => $this->userToken->getUserIdentifier(),
         ));
     }
 

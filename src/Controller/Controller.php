@@ -3,12 +3,15 @@
 namespace App\Controller;
 
 use App\Entity\Csuser;
+use App\Repository\CsuserRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Lexik\Bundle\JWTAuthenticationBundle\Security\User\JWTUser;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 /**
  * @property Csuser $user
+ * @property JWTUser $userToken
  * @property Request $request
  * @property EntityManagerInterface $em
  */
@@ -43,7 +46,21 @@ abstract class Controller extends AbstractController
 
     protected function _getUser(): Csuser
     {
-        /** @var Csuser */
+        /** @var CsuserRepository */
+        $repo = $this->em->getRepository(Csuser::class);
+
+        /** @var Csuser|null */
+        $user = $repo->findUser($this->userToken->getUserIdentifier());
+
+        if (!$user) {
+            throw $this->createAccessDeniedException();
+        }
+
+        return $user;
+    }
+
+    protected function _getUserToken(): JWTUser
+    {
         $user = $this->getUser();
 
         if (!$user) {

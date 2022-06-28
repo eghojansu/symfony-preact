@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Cshist;
+use App\Entity\Csuser;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -39,20 +40,20 @@ class CshistRepository extends ServiceEntityRepository
         }
     }
 
-//    /**
-//     * @return Cshist[] Returns an array of Cshist objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('c')
-//            ->andWhere('c.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('c.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+     * @return Cshist[] Returns an array of Cshist objects
+     */
+    public function getUserActivities(Csuser $user): array
+    {
+        return $this->createQueryBuilder('a')
+            ->andWhere('a.user = :user')
+            ->setParameter('user', $user)
+            ->orderBy('a.recordDate', 'DESC')
+            ->setMaxResults(15)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 
 //    public function findOneBySomeField($value): ?Cshist
 //    {

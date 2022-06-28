@@ -2,6 +2,7 @@
 
 namespace App\Controller\Api;
 
+use App\Repository\CshistRepository;
 use App\Service\Account;
 use App\Service\Menu;
 use App\Utils;
@@ -52,5 +53,13 @@ class AccountController extends Controller
         $granted = $menu->isGranted($this->request->query->get('path'));
 
         return $this->api->rest(compact('granted'));
+    }
+
+    #[Route('/activities', methods: 'GET')]
+    public function activities(CshistRepository $repo)
+    {
+        $activities = $repo->getUserActivities($this->user);
+
+        return $this->api->rest(compact('activities'));
     }
 }

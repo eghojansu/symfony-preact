@@ -43,10 +43,10 @@ function FormLogin ({
   }, async values => {
     const { success } = await onSubmit(values)
 
-    setValue('password', '', true)
-
     if (success) {
       notify('Welcome back', true)
+    } else {
+      setValue('password', '', true)
     }
   })
 

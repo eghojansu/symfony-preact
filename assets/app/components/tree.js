@@ -12,6 +12,7 @@ const NavDropdownItem = ({
     text,
     icon,
     url,
+    onClick,
     attrs = {}
   } = item
   const activeCheck = itemMatcher(activeId)
@@ -19,6 +20,9 @@ const NavDropdownItem = ({
     ...attrs,
     class: clsx('dropdown-item', activeCheck(item) && (activeClass || 'active'), item.attrs?.class),
     href: url || '#',
+    ...(onClick ? { onClick: event => (
+      event.preventDefault() || onClick({ event, item })
+    )} : {}),
   }
 
   return (
@@ -35,6 +39,7 @@ export const NavDropdown = ({
   activeClass,
   parentId,
   options,
+  onClick,
 }) => {
   const {
     class: dropdownClass = 'dropdown-menu',
@@ -45,12 +50,13 @@ export const NavDropdown = ({
     class: clsx(dropdownClass, clsa, end && 'dropdown-menu-end'),
     ...(parentId ? { 'aria-labelledby': parentId } : {}),
   }
+  const handleClick = onClick ? (args => onClick({ ...args, items })) : null
 
   return (
     <ul {...dropdownAttr}>
       {items.map((item, idx) => (<NavDropdownItem
         key={item.id || idx}
-        item={item}
+        item={{ onClick: handleClick, ...item }}
         activeClass={activeClass}
         activeId={activeId} />
       ))}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useRef, useState, useEffect } from 'preact/hooks'
 import { withGranted } from '@app/context'
 import { clsx, normalizeMenu } from '@app/lib/common'
 import notify, { confirm } from '@app/lib/notify'
@@ -13,30 +13,43 @@ export default withGranted(MainPage)
 function MainPage({
   ctx: {
     request,
-    loadMenu: refreshMenu,
+    loadMenu,
   },
 }) {
-  const controller = useRef(new AbortController())
   const groups = [
     {
       id: 'db',
+      name: 'App Menu',
       text: 'App Menu',
     },
     {
       id: 'top',
+      name: 'Account Menu',
       text: 'Account Menu',
     },
   ]
   const toolbar = {
     groups: [
       {
-        icon: 'arrow-clockwise',
-        variant: 'info',
-        onClick: () => refreshMenu(),
-      },
-    ],
+        text: 'New',
+        icon: 'plus-circle',
+        variant: 'primary',
+        dropdowns: {
+          items: groups,
+          onClick: ({ item }) => {
+            addTab(`Add child of ${item.name}`, true, 'add', {
+              data: { parent: item },
+            })
+          },
+        },
+      }
+    ]
   }
   const [menu, menuSet] = useState({})
+  const menuRef = useRef({
+    loaded: true,
+    cancel: new AbortController(),
+  })
   const {
     items,
     activeId,
@@ -46,19 +59,23 @@ function MainPage({
     handleTabClose,
   } = useTree(tree => {
     tree.add('Menu')
-  }, null, tab => ({ ...tab, refresh: loadMenu }))
-  const loadMenu = async () => {
+  }, null, tab => ({ ...tab, refresh: loadBoth }))
+  const loadData = async () => {
     const params = {
       roots: groups.map(group => group.id).join(','),
     }
     const { data } = await request(endpoint, {
       params,
-      signal: controller.current.signal,
+      signal: menuRef.current.cancel.signal,
     })
 
-    menuSet(normalizeMenu(data))
-    refreshMenu()
+    menuRef.current.loaded && menuSet(normalizeMenu(data))
   }
+  const loadBoth = () => {
+    loadData()
+    loadMenu()
+  }
+  const cancel = () => menuRef.current.cancel.abort()
   const updatePos = (menu, tree, direction = 1) => {
     const last = tree.length - 1
 
@@ -83,14 +100,14 @@ function MainPage({
       `${url}/sort`,
       {
         method: 'PATCH',
-        signal: controller.current.signal,
+        signal: menuRef.current.cancel.signal,
         params: { dir },
       }
     )
 
     if (success) {
       notify(message, true)
-      refreshMenu()
+      loadMenu()
     }
   }
   const createActionGroupHandler = group => async ({ action: { id },  tree }) => {
@@ -144,7 +161,7 @@ function MainPage({
 
       if (isConfirmed && success) {
         notify(message, true)
-        loadMenu()
+        loadBoth()
       }
 
       return
@@ -154,10 +171,11 @@ function MainPage({
   }
 
   useEffect(() => {
-    loadMenu()
+    loadData()
 
     return () => {
-      controller.current.abort()
+      cancel()
+      menuRef.current.loaded = false
     }
   }, [])
 

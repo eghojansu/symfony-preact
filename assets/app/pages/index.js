@@ -1,6 +1,6 @@
 import Router from 'preact-router'
 import { Suspense, lazy } from 'preact/compat'
-import { history } from '@app/shared'
+import { history } from '@app/lib/shared'
 import { WaitingPage, ErrorPage } from '@app/components/fallback'
 import HomePage from './home'
 

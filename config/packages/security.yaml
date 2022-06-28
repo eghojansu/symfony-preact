@@ -7,6 +7,8 @@ security:
         # users_in_memory: { memory: null }
         security_user_provider:
             id: App\Security\UserProvider
+        jwt:
+            lexik_jwt: ~
     enable_authenticator_manager: true
     firewalls:
         dev:
@@ -14,6 +16,7 @@ security:
             security: false
         api_login:
             pattern: ^/api/login
+            provider: security_user_provider
             stateless: true
             json_login:
                 check_path: api_login
@@ -22,6 +25,7 @@ security:
         api:
             pattern: ^/api
             stateless: true
+            provider: jwt
             jwt: ~
         # main:
         #     lazy: true

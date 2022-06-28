@@ -1,8 +1,41 @@
 import { clsx, caseTitle } from '../lib/common'
 import { IconLoading } from './visual'
 import { Toolbar } from './button'
+import Pagination, { PaginationInfo, PaginationSizer } from './pagination'
 
 export default Table
+
+export const PaginatedTable = ({
+  setParams,
+  pageSize = 15,
+  params: { size: currentSize } = {},
+  pagination,
+  loading,
+  ...props
+}) => {
+  const { items, total, pages, page = 1, size = 15 } = pagination || {}
+  const handleSizeChange = e => setParams(params => ({ ...params, size: e.target.value }))
+  const handlePageChange = ({ page }) => setParams(params => ({ ...params, page }))
+
+  return (
+    <>
+      <Table items={items} loading={loading} {...props} />
+      {!loading && (
+        <div class="row">
+          <div class="col">
+            {total > 0 && (<PaginationInfo page={page} size={size} count={items?.length} total={total} />)}
+          </div>
+          <div class="col">
+            {pages > 1 && (<Pagination page={page} pages={pages} direction="center" onChange={handlePageChange} />)}
+          </div>
+          <div class="col text-end">
+            <PaginationSizer currentSize={currentSize || size} size={pageSize} onChange={handleSizeChange} />
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
 
 const TableRowHead = ({ columns }) => (
   <tr>

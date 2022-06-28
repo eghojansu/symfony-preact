@@ -35,6 +35,7 @@ export const Group = ({
   label,
   items,
   groupClass,
+  class: clsa,
   split,
   size,
   onClick,
@@ -43,9 +44,10 @@ export const Group = ({
   variant = 'secondary',
   ...actionProps
 }) => {
+  const grouped = items?.length > 0 || (dropdowns && split)
   const attr = {
-    class: clsx('btn-group', size && `btn-group-${size}`, groupClass),
-    role: 'group',
+    class: clsx(grouped && 'btn-group', grouped && size && `btn-group-${size}`, groupClass),
+    role: grouped ? 'group' : null,
     ...(label ? { 'aria-label': label } : {}),
   }
   const handleClick = item => args => onClick({ ...args, item })
@@ -57,6 +59,11 @@ export const Group = ({
         text,
         icon,
         variant,
+        class: clsx(clsa, dropdowns && !split && 'dropdown-toggle'),
+        ...(dropdowns && !split ? {
+          'data-bs-toggle': 'dropdown',
+          'aria-expanded': 'false',
+        } : {}),
         ...(onClick ? { onClick: handleClick({ id, text })} : {}),
         ...actionProps
       }} />}
@@ -67,7 +74,7 @@ export const Group = ({
         }} />
       ))}
       {split && (
-        <button type="button" class={clsx('btn', `btn-${variant}`, 'dropdown-toggle dropdown-toggle-split', clsa)} data-bs-toggle="dropdown" aria-expanded="false">
+        <button type="button" class={clsx('btn', `btn-${variant}`, 'dropdown-toggle dropdown-toggle-split')} data-bs-toggle="dropdown" aria-expanded="false">
           <span class="visually-hidden">{dropdownLabel}</span>
         </button>
       )}

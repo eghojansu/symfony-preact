@@ -8,6 +8,7 @@ import HomePage from './home'
 export default MainPage
 
 const PasswordPage = lazy(() => import('./password'))
+const ActivitiesPage = lazy(() => import('./activities'))
 
 function MainPage ({ path, url }) {
   const prefix = pathPrefix(path)
@@ -20,6 +21,10 @@ function MainPage ({ path, url }) {
       url: `${prefix}/password`,
       text: 'Password',
     },
+    {
+      url: `${prefix}/activities`,
+      text: 'Activities',
+    },
   ]
 
   return (
@@ -28,6 +33,7 @@ function MainPage ({ path, url }) {
         <Router>
           <HomePage path={prefix} />
           <PasswordPage path={`${prefix}/password`} />
+          <ActivitiesPage path={`${prefix}/activities`} />
           <ErrorPage default />
         </Router>
       </Suspense>

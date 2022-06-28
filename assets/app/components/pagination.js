@@ -22,6 +22,10 @@ export const PaginationSizer = ({
   currentSize = 3,
   onChange = e => null,
 }) => {
+  if (size < 1) {
+    return null
+  }
+
   return (
     <select value={currentSize} onChange={onChange} class="form-select d-inline-block" style="max-width: 90px">
       <option value="">Page Size</option>

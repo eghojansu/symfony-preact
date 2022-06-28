@@ -23,6 +23,15 @@ class Cshist
     #[ORM\Column(type: 'string', length: 255)]
     private $agent;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private $request;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private $token;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private $recordDate;
+
     #[ORM\Column(type: 'json', nullable: true)]
     private $payload = [];
 
@@ -70,6 +79,42 @@ class Cshist
     public function setAgent(string $agent): self
     {
         $this->agent = $agent;
+
+        return $this;
+    }
+
+    public function getRequest(): ?string
+    {
+        return $this->request;
+    }
+
+    public function setRequest(string|null $request): self
+    {
+        $this->request = $request;
+
+        return $this;
+    }
+
+    public function getToken(): ?string
+    {
+        return $this->token;
+    }
+
+    public function setToken(string|null $token): self
+    {
+        $this->token = $token;
+
+        return $this;
+    }
+
+    public function getRecordDate(): \DateTime|null
+    {
+        return $this->recordDate;
+    }
+
+    public function setRecordDate(\DateTime|null $recordDate): self
+    {
+        $this->recordDate = $recordDate;
 
         return $this;
     }
