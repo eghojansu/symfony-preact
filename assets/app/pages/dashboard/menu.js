@@ -143,10 +143,14 @@ function MainPage({
     }
 
     if ('edit' === id) {
-      const [parent] = tree.slice(-2)
+      const [parent] = tree.slice(-2, 1)
 
       addTab(`Edit ${item.name}`, true, id, {
-        data: { url, parent, item },
+        data: {
+          url,
+          item,
+          parent: parent === item ? groups.find(group => group.id === item.parent) : parent,
+        },
       })
 
       return

@@ -294,16 +294,20 @@ export const useFormAuto = setup => {
 
     controls.forEach(
       ({ name, type, once, expanded, multiple, extra: { ignore } = {} }) => {
-        if (!ignore && (!once || !initials || !(name in initials))) {
+        const check = isCheck(type)
+        const choice = isChoice(type)
+
+        if (
+          !ignore
+          && (!once || !initials || !(name in initials))
+          && (!check || ((name in state.values) && state.values[name]))
+        ) {
           picks.push(name)
         }
 
         if ('password' === type) {
           passwords[name] = ''
         }
-
-        const check = isCheck(type)
-        const choice = isChoice(type)
 
         event.target.querySelectorAll(`[name="${name}"]`).forEach(el => {
           update.errors[name] = update.errors[name] || el.validationMessage
