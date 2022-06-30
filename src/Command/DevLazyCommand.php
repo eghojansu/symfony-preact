@@ -194,13 +194,7 @@ class DevLazyCommand extends Command
 
     private function _01DB01Support(OutputInterface $output)
     {
-        $imports = array_reduce(
-            glob($this->projectDir . '/database/support/*.sql'),
-            static fn (array $imports, string $file) => $imports + (
-                ($schema = file_get_contents($file)) ? array($file => $schema) : array()
-            ),
-            array(),
-        );
+        $imports = glob($this->projectDir . '/database/support/*.sql');
 
         if (!$imports) {
             $output->writeln('<comment>No schema imported</>');
@@ -215,12 +209,12 @@ class DevLazyCommand extends Command
             throw new \InvalidArgumentException('PDO connection is not found');
         }
 
-        array_walk($imports, function(string $schema, string $file) use ($pdo, $output) {
+        array_walk($imports, function(string $file) use ($pdo, $output) {
             $timer = new Timer();
             $timer->start();
             $output->write(sprintf('Importing <comment>%s</>...', Utils::ellipsis($file, 30)));
 
-            $pdo->exec($schema);
+            $pdo->exec(file_get_contents($file));
 
             list($err, $code, $message) = $pdo->errorInfo();
             $success = '00000' === $err;
