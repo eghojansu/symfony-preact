@@ -2,16 +2,16 @@
 
 namespace App\EventSubscriber;
 
-use App\DependencyInjection\Awareness\UserAware;
-use App\Entity\Concern\AuditableInterface;
 use App\Entity\Csuser;
-use Doctrine\Bundle\DoctrineBundle\EventSubscriber\EventSubscriberInterface;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\UnitOfWork;
-use Doctrine\Persistence\Event\LifecycleEventArgs;
-use Symfony\Contracts\Service\ServiceSubscriberInterface;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\Concern\AuditableInterface;
+use App\DependencyInjection\Awareness\UserAware;
 use Symfony\Contracts\Service\ServiceSubscriberTrait;
+use Symfony\Contracts\Service\ServiceSubscriberInterface;
+use Doctrine\Bundle\DoctrineBundle\EventSubscriber\EventSubscriberInterface;
+use Doctrine\ORM\Event\OnFlushEventArgs;
 
 class EntitySubscriber implements EventSubscriberInterface, ServiceSubscriberInterface
 {
@@ -20,53 +20,105 @@ class EntitySubscriber implements EventSubscriberInterface, ServiceSubscriberInt
     public function getSubscribedEvents()
     {
         return array(
-            Events::prePersist,
+            Events::onFlush,
         );
     }
 
-    public function prePersist(LifecycleEventArgs $args)
+    public function onFlush(OnFlushEventArgs $args)
     {
-        $entity = $args->getObject();
+        $em = $args->getEntityManager();
+        $uow = $em->getUnitOfWork();
+        $now = new \DateTime();
+        $user = $this->user();
 
-        if ($entity instanceof AuditableInterface && $entity->isAuditable()) {
-            $this->touch($entity, $this->getUserValue($args->getObjectManager()));
+        foreach ($uow->getScheduledEntityInsertions() as $entity) {
+            if ($entity instanceof AuditableInterface && $entity->isAuditable()) {
+                $this->touch($entity, $user, $now);
+
+                if ($entity->getCreatedBy()) {
+                    $meta = $em->getClassMetadata(get_class($entity));
+
+                    $uow->recomputeSingleEntityChangeSet($meta, $entity);
+                }
+            }
+        }
+
+        foreach ($uow->getScheduledEntityUpdates() as $entity) {
+            if ($entity instanceof AuditableInterface && $entity->isAuditable()) {
+                $this->touchUpdate($entity, $user, $now);
+
+                $meta = $em->getClassMetadata(get_class($entity));
+
+                $uow->recomputeSingleEntityChangeSet($meta, $entity);
+            }
+        }
+
+        foreach ($uow->getScheduledEntityDeletions() as $entity) {
+            if (
+                $entity instanceof AuditableInterface
+                && $entity->isAuditable()
+                && !$entity->getDeletedAt()
+            ) {
+                $em->persist($entity);
+
+                $updates = $this->touchDelete($entity, $user, $now);
+
+                $uow->scheduleExtraUpdate($entity, $updates);
+            }
         }
     }
 
-    private function touch(AuditableInterface $entity, Csuser|null $user): void
-    {
-        $now = new \DateTime();
-
+    private function touch(
+        AuditableInterface $entity,
+        Csuser|null $user,
+        \DateTime $ts,
+    ): void {
         if (null === $entity->getCreatedAt()) {
-            $entity->setCreatedAt($now);
-        }
-
-        if (null === $entity->getUpdatedAt()) {
-            $entity->setUpdatedAt($now);
+            $entity->setCreatedAt($ts);
         }
 
         if (null === $entity->getCreatedBy() && $user) {
             $entity->setCreatedBy($user);
         }
 
-        if (null === $entity->getUpdatedBy() && $user) {
+        $this->touchUpdate($entity, $user, $ts, false);
+    }
+
+    private function touchUpdate(
+        AuditableInterface $entity,
+        Csuser|null $user,
+        \DateTime $ts,
+        bool $editing = true,
+    ): void {
+        if ($editing || null === $entity->getUpdatedAt()) {
+            $entity->setUpdatedAt($ts);
+        }
+
+        if (
+            ($editing || null === $entity->getUpdatedBy())
+            && $user
+        ) {
             $entity->setUpdatedBy($user);
         }
     }
 
-    private function getUserValue(EntityManagerInterface $manager): Csuser|null
-    {
-        $user = $this->user();
+    private function touchDelete(
+        AuditableInterface $entity,
+        Csuser|null $user,
+        \DateTime $now,
+    ): array {
+        $updates = array(
+            'deletedAt' => array($entity->getDeletedAt(), $now),
+        );
 
-        if ($user && !$manager->contains($user) && UnitOfWork::STATE_MANAGED !== $manager->getUnitOfWork()->getEntityState($user)) {
-            $manager->persist($user);
+        $entity->setDeletedAt($now);
+
+        if ($user) {
+            $updates['deletedBy'] = array($entity->getDeletedBy(), $user);
+
+            $entity->setDeletedBy($user);
         }
 
-        return $user;
-    }
-
-    private function getNow(): \DateTime
-    {
-        return new \DateTime();
+        return $updates;
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use App\Entity\Concern\Auditable;
+use App\Entity\Concern\AuditableInterface;
 use App\Entity\Concern\CurrentUser;
 use App\Utils;
 use App\Validator as CustomAssert;
@@ -17,7 +19,7 @@ use Symfony\Component\Serializer\Annotation\Ignore;
 
 #[ORM\Entity(repositoryClass: CsuserRepository::class)]
 #[UniqueEntity('id', groups: array('create'))]
-class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
+class Csuser implements UserInterface, PasswordAuthenticatedUserInterface, AuditableInterface
 {
     const ROLE_ADMIN = 'Admin';
     const ROLE_ROOT = 'Root';
@@ -59,6 +61,7 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface
     #[Ignore]
     private $newPassword;
 
+    use Auditable;
     use CurrentUser;
 
     public function __construct()

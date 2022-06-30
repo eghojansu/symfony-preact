@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use App\Entity\Concern\Auditable;
+use App\Entity\Concern\AuditableInterface;
 use App\Utils;
 use App\Validator as CustomAssert;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,7 +15,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: CsmenuRepository::class)]
 #[UniqueEntity('id', groups: array('create'))]
-class Csmenu
+class Csmenu implements AuditableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue('NONE')]
@@ -66,6 +68,8 @@ class Csmenu
 
     #[ORM\Column(type: 'json', nullable: true)]
     private $attrs = [];
+
+    use Auditable;
 
     public function __construct()
     {

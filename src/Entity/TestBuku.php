@@ -2,12 +2,14 @@
 
 namespace App\Entity;
 
+use App\Entity\Concern\Auditable;
+use App\Entity\Concern\AuditableInterface;
 use App\Repository\TestBukuRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TestBukuRepository::class)]
-class TestBuku
+class TestBuku implements AuditableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -22,6 +24,8 @@ class TestBuku
     #[ORM\Column(type: 'integer')]
     #[Assert\NotBlank()]
     private $harga;
+
+    use Auditable;
 
     public function getId(): ?int
     {

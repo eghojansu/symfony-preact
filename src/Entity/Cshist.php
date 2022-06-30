@@ -2,11 +2,13 @@
 
 namespace App\Entity;
 
+use App\Entity\Concern\Auditable;
+use App\Entity\Concern\AuditableInterface;
 use App\Repository\CshistRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CshistRepository::class)]
-class Cshist
+class Cshist implements AuditableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue('CUSTOM')]
@@ -41,6 +43,8 @@ class Cshist
     #[ORM\ManyToOne(targetEntity: Csuser::class, inversedBy: 'histories')]
     #[ORM\JoinColumn(referencedColumnName: 'userid')]
     private $user;
+
+    use Auditable;
 
     public function getId(): string
     {
