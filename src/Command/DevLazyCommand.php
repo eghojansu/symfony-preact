@@ -3,6 +3,7 @@
 namespace App\Command;
 
 use App\Utils;
+use Doctrine\DBAL\Connection;
 use Symfony\Component\Yaml\Yaml;
 use SebastianBergmann\Timer\Timer;
 use Symfony\Component\Console\Command\Command;
@@ -69,6 +70,7 @@ class DevLazyCommand extends Command
         $total = count($actions);
         $run = fn ($method) => match($method) {
             '_01Seed01Seed' => $this->_01Seed01Seed($output),
+            '_01DB01Support' => $this->_01DB01Support($output),
             default => false,
         } ?? true;
         $separate = static fn () => $output->writeln(str_repeat('-', 50));
@@ -190,6 +192,45 @@ class DevLazyCommand extends Command
         ));
     }
 
+    private function _01DB01Support(OutputInterface $output)
+    {
+        $imports = array_reduce(
+            glob($this->projectDir . '/database/support/*.sql'),
+            static fn (array $imports, string $file) => $imports + (
+                ($schema = file_get_contents($file)) ? array($file => $schema) : array()
+            ),
+            array(),
+        );
+
+        if (!$imports) {
+            $output->writeln('<comment>No schema imported</>');
+
+            return;
+        }
+
+        /** @var \PDO */
+        $pdo = $this->db->getNativeConnection();
+
+        if (!$pdo instanceof \PDO) {
+            throw new \InvalidArgumentException('PDO connection is not found');
+        }
+
+        array_walk($imports, function(string $schema, string $file) use ($pdo, $output) {
+            $timer = new Timer();
+            $timer->start();
+            $output->write(sprintf('Importing <comment>%s</>...', Utils::ellipsis($file, 30)));
+
+            $pdo->exec($schema);
+
+            list($err, $code, $message) = $pdo->errorInfo();
+            $success = '00000' === $err;
+            $tag = $success ? 'info' : 'error';
+            $msg = $success ? 'done' : '[' . $code . '] ' . $message;
+
+            $output->writeln(sprintf(' <%s>%s</> [%s]', $tag, $msg, $timer->stop()->asString()));
+        });
+    }
+
     private function call(
         OutputInterface $output,
         string $cmdName,
@@ -204,11 +245,11 @@ class DevLazyCommand extends Command
     private $data = array();
 
     public function __construct(
+        private Connection $db,
         private string $projectDir,
         private string $projectEnv,
-        string $name = null,
     ) {
-        parent::__construct($name);
+        parent::__construct();
 
         $this->data = Yaml::parseFile($projectDir . '/dev/data.yaml');
     }

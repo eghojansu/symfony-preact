@@ -30,8 +30,19 @@ class Utils
 
     public static function truncate(string $text, int $max, string $append = '...'): string
     {
-        if (strlen($text) - strlen($append) > $max) {
-            return substr($text, 0, $max - strlen($append)) . $append;
+        if (strlen($text) - ($cut = strlen($append)) > $max) {
+            return substr($text, 0, $max - $cut) . $append;
+        }
+
+        return $text;
+    }
+
+    public static function ellipsis(string $text, int $max, string $glue = '...'): string
+    {
+        if (strlen($text) - ($cut = strlen($glue)) > $max) {
+            $mid = floor(($max - $cut) / 2);
+
+            return substr($text, 0, $mid) . $glue . substr($text, -$mid);
         }
 
         return $text;
