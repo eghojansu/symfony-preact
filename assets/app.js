@@ -1,2 +1,2 @@
 import './shared'
-import './app/main'
+import './app/index'
