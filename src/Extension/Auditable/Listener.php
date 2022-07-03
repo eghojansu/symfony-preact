@@ -1,54 +1,43 @@
 <?php
 
-namespace App\EventSubscriber;
+namespace App\Extension\Auditable;
 
 use App\Entity\Csuser;
 use Doctrine\ORM\Events;
-use Doctrine\ORM\UnitOfWork;
-use Doctrine\ORM\EntityManagerInterface;
-use App\Entity\Concern\AuditableInterface;
+use Doctrine\ORM\Event\OnFlushEventArgs;
 use App\DependencyInjection\Awareness\UserAware;
 use Symfony\Contracts\Service\ServiceSubscriberTrait;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
-use Doctrine\Bundle\DoctrineBundle\EventSubscriber\EventSubscriberInterface;
-use Doctrine\ORM\Event\OnFlushEventArgs;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
-class EntitySubscriber implements EventSubscriberInterface, ServiceSubscriberInterface
+#[AutoconfigureTag('doctrine.event_listener', array(
+    'event' => Events::onFlush,
+))]
+class Listener implements ServiceSubscriberInterface
 {
     use ServiceSubscriberTrait, UserAware;
-
-    public function getSubscribedEvents()
-    {
-        return array(
-            Events::onFlush,
-        );
-    }
 
     public function onFlush(OnFlushEventArgs $args)
     {
         $em = $args->getEntityManager();
         $uow = $em->getUnitOfWork();
         $now = new \DateTime();
-        $user = $this->user();
+        $user = $this->currentUser();
 
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
             if ($entity instanceof AuditableInterface && $entity->isAuditable()) {
+                $meta = $em->getClassMetadata(get_class($entity));
+
                 $this->touch($entity, $user, $now);
-
-                if ($entity->getCreatedBy()) {
-                    $meta = $em->getClassMetadata(get_class($entity));
-
-                    $uow->recomputeSingleEntityChangeSet($meta, $entity);
-                }
+                $uow->recomputeSingleEntityChangeSet($meta, $entity);
             }
         }
 
         foreach ($uow->getScheduledEntityUpdates() as $entity) {
             if ($entity instanceof AuditableInterface && $entity->isAuditable()) {
-                $this->touchUpdate($entity, $user, $now);
-
                 $meta = $em->getClassMetadata(get_class($entity));
 
+                $this->touchUpdate($entity, $user, $now);
                 $uow->recomputeSingleEntityChangeSet($meta, $entity);
             }
         }

@@ -7,7 +7,7 @@ function useTable(setup) {
   const {
     columns = [],
     source,
-    onAction: doAction,
+    onRowAction: doRowAction,
     formatPage = pagination => init => ({ ...init, ...pagination }),
     ...tableProps
   } = setup || {}
@@ -30,12 +30,9 @@ function useTable(setup) {
     pages: 0,
   })
   const rowUrl = (row, keys) => `${source}/${keys.map(key => row[key]).join('/')}`
-  const onAction = args => {
-    const { keys, row } = args
-    const url = rowUrl(row, keys)
-
-    doAction && doAction({ ...args, url })
-  }
+  const onRowAction = args => (
+    doRowAction && doRowAction({ ...args, url: rowUrl(args.row, args.keys) })
+  )
   const cancel = () => tabRef.current.cancel.abort()
   const load = () => {
     if (tabRef.current.loading || !source) {
@@ -82,7 +79,7 @@ function useTable(setup) {
     loading,
     load,
     cancel,
-    onAction,
+    onRowAction,
     setParams: paramsSet,
     pageSize: tabRef.current.pageSize,
     ...tableProps,

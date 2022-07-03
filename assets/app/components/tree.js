@@ -79,10 +79,7 @@ const NavItem = ({ item, activeId, onClose, onClick, options = {} }) => {
     icon,
     items,
     closable,
-    attrs: {
-      title,
-      ...attrs
-    } = {},
+    attrs,
   } = item
   const hasChildren = items?.length > 0
   const elementId = `nav-${caseKebab(id)}`
@@ -98,14 +95,15 @@ const NavItem = ({ item, activeId, onClose, onClick, options = {} }) => {
   const itemAttr = {
     class: clsx('nav-item', hasChildren && itemClass),
   }
+  const { title, class: clsa, ...attrsRest } = attrs || {}
   const linkAttr = {
-    ...attrs,
+    ...attrsRest,
     class: clsx(
       'nav-link',
       hasChildren && linkClass,
       active && (activeClass || 'active'),
       closable && 'd-flex',
-      attrs.class,
+      clsa,
     ),
     href: hasChildren || !url ? '#' : url,
     'aria-current': active ? 'page' : null,

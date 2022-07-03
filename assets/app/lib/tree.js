@@ -8,29 +8,37 @@ export const itemMatcher = (value, ...keys) => item => item && (
 ).some(key => key in item && item[key] == value)
 
 function tree(initialize, withIdKey, extend = (tab => tab)) {
-  const idKey = withIdKey || 'text'
+  const idKey = withIdKey || 'id'
   const [items, itemsSet] = useState([])
   const [activeId, activeIdSet] = useState()
   const activeItem = useMemo(() => items.find(itemMatcher(activeId, idKey)), [items, activeId])
-  const addItem = (item, update) => {
-    const existing = items.find(itemMatcher(item[idKey], idKey))
+  const getItem = id => items.find(itemMatcher(id, idKey))
+  const addItem = (item, update, oldId, activate = true) => itemsSet(items => {
+    let key = oldId || item[idKey]
+    let updates = [...items]
+    const existing = updates.find(itemMatcher(key, idKey))
 
     if (existing && update) {
-      const pos = items.indexOf(existing)
+      const pos = updates.indexOf(existing)
 
-      itemsSet([
-        ...items.slice(0, pos),
+      key = existing[idKey]
+      updates = [
+        ...updates.slice(0, pos),
         { ...existing, ...item, [idKey]: existing[idKey] },
-        ...items.slice(pos + 1),
-      ])
+        ...updates.slice(pos + 1),
+      ]
     } else if (!existing || item.multiple) {
-      itemsSet(items => [...items, item])
+      updates = [...updates, item]
     }
 
-    activeIdSet(item[idKey])
-  }
-  const add = (text, close, withId, tab = {}, update) => {
-    const id = withId || caseCamel(text)
+    activate && activeIdSet(key)
+
+    return updates
+  })
+  const update = (id, item, activate = false) => addItem(item, true, id, activate)
+  const add = (text, close, withTag, tab = {}, update) => {
+    const id = tab.id || caseCamel(text)
+    const tag = withTag || caseCamel(text)
     const key = 'text' === idKey ? text : (
       'id' === idKey ? id : ((tab && tab[idKey]) || random())
     )
@@ -39,7 +47,9 @@ function tree(initialize, withIdKey, extend = (tab => tab)) {
       extend({
         ...tab,
         id,
+        tag,
         text,
+        idKey,
         attrs: {
           title: text,
           ...(tab.attrs || {}),
@@ -93,7 +103,9 @@ function tree(initialize, withIdKey, extend = (tab => tab)) {
     activeItem,
     add,
     reset,
+    update,
     addItem,
+    getItem,
     removeItem,
     setActive: activeIdSet,
     setData,

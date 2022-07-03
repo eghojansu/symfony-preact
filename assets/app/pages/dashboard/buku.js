@@ -1,5 +1,5 @@
 import { withGranted } from '@app/context'
-import Crud, { CrudForm } from '@app/components/crud'
+import Crud from '@app/components/crud'
 
 export default withGranted(MainPage)
 
@@ -7,15 +7,15 @@ function MainPage() {
   return (
     <Crud
       title="Daftar Buku"
-      renderContent={renderContent}
+      titleKey="nama"
       endpoint={endpoint}
-      source={table} />
+      source={table}
+      form={form} />
   )
 }
 
 const endpoint = '/api/buku'
-const formProps = {
-  endpoint,
+const form = {
   controls: [
     {
       name: 'nama',
@@ -39,10 +39,3 @@ const table = {
     },
   ],
 }
-
-const renderContent = tab => (
-  (['create', 'edit'].includes(tab?.id) && (
-    <CrudForm key={tab.text} tab={tab} {...formProps} />
-  ))
-  || null
-)

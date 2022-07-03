@@ -11,7 +11,7 @@ function Panel ({
   toolbar,
   children,
   activeId,
-  tabIdKey = 'text',
+  tabIdKey,
   onTabClose,
   onTabSelect,
 }) {

@@ -2,17 +2,18 @@
 
 namespace App\Entity;
 
-use App\Entity\Concern\Auditable;
-use App\Entity\Concern\AuditableInterface;
-use App\Repository\CshistRepository;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\CshistRepository;
+use App\Extension\Auditable\AuditableInterface;
+use App\Extension\Auditable\AuditableTrait;
+use App\Extension\ORM\Generator\UniqidGenerator;
 
 #[ORM\Entity(repositoryClass: CshistRepository::class)]
 class Cshist implements AuditableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue('CUSTOM')]
-    #[ORM\CustomIdGenerator('App\\Generator\\UniqidGenerator')]
+    #[ORM\CustomIdGenerator(UniqidGenerator::class)]
     #[ORM\Column(type: 'string', length: 8, name: 'uniqid')]
     private $id;
 
@@ -44,7 +45,7 @@ class Cshist implements AuditableInterface
     #[ORM\JoinColumn(referencedColumnName: 'userid')]
     private $user;
 
-    use Auditable;
+    use AuditableTrait;
 
     public function getId(): string
     {

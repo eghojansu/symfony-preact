@@ -9,6 +9,7 @@ use App\Form\AccountPasswordType;
 use Doctrine\ORM\EntityManagerInterface;
 use App\DependencyInjection\Awareness\UserAware;
 use App\DependencyInjection\Awareness\RequestAware;
+use App\Extension\API\Rest;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\Service\ServiceSubscriberTrait;
@@ -25,12 +26,12 @@ class Account implements ServiceSubscriberInterface
         private UserPasswordHasherInterface $passwordHasher,
         private TokenStorageInterface $tokenStorage,
         private JWTTokenManagerInterface $jwtManager,
-        private Api $api,
+        private Rest $api,
     ) {}
 
     public function getProfile(): array
     {
-        $user = $this->user();
+        $user = $this->currentUser();
 
         return array(
             'name' => $user->getName(),
@@ -54,7 +55,7 @@ class Account implements ServiceSubscriberInterface
         $history->setIp($req->getClientIp());
         $history->setAgent($req->headers->get('User-Agent'));
         $history->setRequest($info);
-        $history->setUser($this->user());
+        $history->setUser($this->currentUser());
         $history->setRecordDate(new \DateTime());
 
         $this->em->persist($history);
@@ -65,14 +66,14 @@ class Account implements ServiceSubscriberInterface
 
     public function profileUpdate(): void
     {
-        $this->api->handleJson(AccountType::class, $this->user());
+        $this->api->handleSave(AccountType::class, $this->currentUser());
     }
 
     public function passwordUpdate(): void
     {
-        $this->api->handleJson(
+        $this->api->handleSave(
             AccountPasswordType::class,
-            $this->user(),
+            $this->currentUser(),
             fn (Csuser $user) => $user->setPassword(
                 $this->passwordHasher->hashPassword(
                     $user,

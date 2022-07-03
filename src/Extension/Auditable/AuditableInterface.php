@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity\Concern;
+namespace App\Extension\Auditable;
 
 use App\Entity\Csuser;
 

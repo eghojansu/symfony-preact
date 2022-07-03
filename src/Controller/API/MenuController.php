@@ -1,11 +1,10 @@
 <?php
 
-namespace App\Controller\Api;
+namespace App\Controller\API;
 
-use App\Utils;
-use App\Service\Menu;
 use App\Entity\Csmenu;
 use App\Form\MenuType;
+use App\Extension\RBAC\Menu;
 use App\Repository\CsmenuRepository;
 use Symfony\Component\Routing\Annotation\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
@@ -17,15 +16,13 @@ class MenuController extends Controller
     #[Route('', methods: 'GET')]
     public function menu(Menu $menu)
     {
-        return $this->api->rest($menu->getAll(...Utils::split(
-            $this->request->query->get('roots'),
-        )));
+        return $this->api->data($menu->getEditingTree());
     }
 
     #[Route('', methods: 'POST')]
     public function store(CsmenuRepository $repo)
     {
-        $this->api->handleJson(
+        return $this->api->handleSave(
             MenuType::class,
             new Csmenu(),
             static function (Csmenu $menu, $em) use ($repo) {
@@ -36,18 +33,14 @@ class MenuController extends Controller
                 'validation_groups' => array('Default', 'create'),
             ),
         );
-
-        return $this->api->saved();
     }
 
     #[Route('/{menu}', methods: 'PUT')]
     public function update(Csmenu $menu)
     {
-        $this->api->handleJson(MenuType::class, $menu, false, array(
+        return $this->api->handleSave(MenuType::class, $menu, false, array(
             'method' => 'PUT',
         ));
-
-        return $this->api->saved();
     }
 
     #[Route('/{menu}', methods: 'DELETE')]

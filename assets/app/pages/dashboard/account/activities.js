@@ -9,10 +9,9 @@ function MainPage() {
       { name: 'name' },
       { name: 'recordDate' },
     ],
-    editable: false,
-    removable: false,
+    rowAction: null,
     source: '/api/account/activities',
-    formatPage: ({ activities: items }) => pagination => ({
+    formatPage: ({ items }) => pagination => ({
       ...pagination,
       items,
     }),

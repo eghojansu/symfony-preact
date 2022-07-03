@@ -104,9 +104,11 @@ export default ({ children }) => {
 
     grantsSet(grants => ({ ...grants, [path] : { granting: true }}))
 
-    const { data } = await request('/api/account/access', { params: { path }})
+    const { data: { granted = false } = {} } = await request('/api/account/access', { params: { path }})
 
-    grantsSet(grants => ({ ...grants, [path] : { granting: false, granted: data?.granted }}))
+    grantsSet(grants => ({ ...grants, [path] : { granting: false, granted }}))
+
+    return granted
   }
   const logout = async (notifyServer = true, message = null, success = true, options = {}) => {
     let doNotify = true

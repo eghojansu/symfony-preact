@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Entity\Concern;
+namespace App\Extension\Auditable;
 
 use App\Entity\Csuser;
 use Doctrine\ORM\Mapping as ORM;
 
-trait Auditable
+trait AuditableTrait
 {
     #[ORM\Column(name: 'creat', type: 'datetime', nullable: true)]
     private $createdAt;

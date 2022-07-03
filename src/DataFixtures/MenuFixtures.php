@@ -2,42 +2,33 @@
 
 namespace App\DataFixtures;
 
-use App\Utils;
 use App\Entity\Csmenu;
+use App\Extension\Utils;
+use App\Extension\RBAC\Menu;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Symfony\Component\Yaml\Yaml;
 
 class MenuFixtures extends Fixture
 {
+    public function __construct(
+        private Menu $menu,
+    ) {}
+
     public function load(ObjectManager $manager): void
     {
         Utils::walk(
-            self::buildMenu(),
+            $this->menu->toEntities(
+                self::getMenu('db') + self::getMenu('top'),
+            ),
             static fn (Csmenu $menu) => $manager->persist($menu),
         );
 
         $manager->flush();
     }
 
-    private static function buildMenu(): array
+    private static function getMenu(string $name): array
     {
-        $menu = array();
-        $menu['db'] = Csmenu::create(0, 'db', 'Dashboard Menu');
-        $menu['db.home'] = Csmenu::create(1, 'db.home', 'Dashboard', '/dashboard', 'house', null, $menu['db']);
-        $menu['adm'] = Csmenu::create(2, 'adm', 'Administration', null, 'gear', 'ROLE_ADMIN', $menu['db']);
-        $menu[] = Csmenu::create(1, 'adm.user', 'Users', '/dashboard/adm/user', 'people', null, $menu['adm']);
-        $menu[] = Csmenu::create(2, 'adm.menu', 'Menu', '/dashboard/adm/menu', 'menu-up', null, $menu['adm']);
-
-        $menu['test'] = Csmenu::create(3, 'test', 'Test', null, 'book', 'ROLE_ADMIN', $menu['db']);
-        $menu[] = Csmenu::create(1, 'test.buku', 'Daftar Buku', '/dashboard/test/buku', 'book', null, $menu['test']);
-
-        $menu['top'] = Csmenu::create(0, 'top', 'Top Menu');
-        $menu['ac'] = Csmenu::create(1, 'ac', 'Account', null, 'person', null, $menu['top']);
-        $menu[] = Csmenu::create(1, 'ac.acc', 'Profile', '/dashboard/account', 'person-circle', null, $menu['ac']);
-        $menu[] = Csmenu::create(2, 'ac.key', 'Password', '/dashboard/account/password', 'key', null, $menu['ac']);
-        $menu[] = Csmenu::create(3, 'ac.act', 'Activities', '/dashboard/account/activities', 'clock-history', null, $menu['ac']);
-        $menu[] = Csmenu::create(4, 'ac.out', 'Logout', null, 'power', null, $menu['ac'])->setAttrs(array('class' => 'text-danger', 'data-action' => 'logout'));
-
-        return $menu;
+        return Yaml::parseFile(__DIR__ . '/data/menu_' . $name . '.yml');
     }
 }

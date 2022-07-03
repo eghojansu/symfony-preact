@@ -20,7 +20,7 @@ export const Toolbar = ({
     <div {...attr}>
       {groups.map((group, idx) => (
         <Group key={group.id || idx} {...{
-          ...(onClick ? { onClick: handleClick(group) } : {}),
+          ...(onClick ? { onItemClick: handleClick(group) } : {}),
           ...group,
         }} />
       ))}
@@ -38,19 +38,19 @@ export const Group = ({
   class: clsa,
   split,
   size,
-  onClick,
-  dropdowns,
+  onItemClick,
+  dropdown,
   dropdownLabel = 'Toggle dropdown',
   variant = 'secondary',
   ...actionProps
 }) => {
-  const grouped = items?.length > 0 || (dropdowns && split)
+  const grouped = items?.length > 0 || (dropdown && split)
   const attr = {
     class: clsx(grouped && 'btn-group', grouped && size && `btn-group-${size}`, groupClass),
     role: grouped ? 'group' : null,
     ...(label ? { 'aria-label': label } : {}),
   }
-  const handleClick = item => args => onClick({ ...args, item })
+  const handleClick = item => args => onItemClick({ ...args, item })
 
   return (
     <div {...attr}>
@@ -59,26 +59,25 @@ export const Group = ({
         text,
         icon,
         variant,
-        class: clsx(clsa, dropdowns && !split && 'dropdown-toggle'),
-        ...(dropdowns && !split ? {
+        class: clsx(clsa, dropdown && !split && 'dropdown-toggle', size && `btn-${size}`),
+        ...(dropdown && !split ? {
           'data-bs-toggle': 'dropdown',
           'aria-expanded': 'false',
         } : {}),
-        ...(onClick ? { onClick: handleClick({ id, text })} : {}),
         ...actionProps
       }} />}
-      {(items || []).map((item, idx) => (
+      {items && items.map((item, idx) => (
         <Action key={item.id || idx} {...{
-          ...(onClick ? { onClick: handleClick(item)} : {}),
+          ...(onItemClick ? { onClick: handleClick(item)} : {}),
           ...item,
         }} />
       ))}
-      {split && (
+      {split && dropdown && (
         <button type="button" class={clsx('btn', `btn-${variant}`, 'dropdown-toggle dropdown-toggle-split')} data-bs-toggle="dropdown" aria-expanded="false">
           <span class="visually-hidden">{dropdownLabel}</span>
         </button>
       )}
-      {dropdowns && <NavDropdown {...dropdowns} />}
+      {dropdown && <NavDropdown {...dropdown} />}
     </div>
   )
 }

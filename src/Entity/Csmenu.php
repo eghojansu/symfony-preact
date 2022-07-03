@@ -2,13 +2,13 @@
 
 namespace App\Entity;
 
-use App\Entity\Concern\Auditable;
-use App\Entity\Concern\AuditableInterface;
-use App\Utils;
-use App\Validator as CustomAssert;
+use App\Extension\Utils;
 use Doctrine\ORM\Mapping as ORM;
+use App\Validator as CustomAssert;
 use App\Repository\CsmenuRepository;
+use App\Extension\Auditable\AuditableTrait;
 use Doctrine\Common\Collections\Collection;
+use App\Extension\Auditable\AuditableInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -17,6 +17,10 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[UniqueEntity('id', groups: array('create'))]
 class Csmenu implements AuditableInterface
 {
+    const ROOT_DASHBOARD = 'db';
+    const ROOT_MODULE = 'mod';
+    const ROOT_TOP = 'top';
+
     #[ORM\Id]
     #[ORM\GeneratedValue('NONE')]
     #[ORM\Column(type: 'string', length: 10, name: 'menuid')]
@@ -69,7 +73,7 @@ class Csmenu implements AuditableInterface
     #[ORM\Column(type: 'json', nullable: true)]
     private $attrs = [];
 
-    use Auditable;
+    use AuditableTrait;
 
     public function __construct()
     {

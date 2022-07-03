@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Controller\Api;
+namespace App\Controller\API;
 
-use App\Service\Api;
+use App\Extension\API\Rest;
 use App\Controller\Controller as BaseController;
 
 /**
- * @property Api $api
+ * @property Rest $api
  */
 abstract class Controller extends BaseController
 {
     protected static function subscribing(): array
     {
         return array(
-            'api' => Api::class,
+            'api' => Rest::class,
         );
     }
 }

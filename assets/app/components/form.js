@@ -125,7 +125,7 @@ export const FormControl = ({
     if (multiple) {
       control = (
         <>
-          {(items || []).map((item, ndx) => (
+          {items && items.map((item, ndx) => (
             <div key={item.id} class="form-check">
               <input {...{
                 ...props,
@@ -146,7 +146,7 @@ export const FormControl = ({
     } else {
       control = (
         <>
-          {(items || []).map((item, ndx) => (
+          {items && items.map((item, ndx) => (
             <div key={item.id} class="form-check">
               <input {...{
                 ...props,
@@ -178,7 +178,7 @@ export const FormControl = ({
           id,
         }}>
           <option key="_placeholder" value="">{`-- Select ${text} --`}</option>
-          {(items || []).map(item => (
+          {items && items.map(item => (
             <option value={item.id} key={item.id}>{item.text}</option>
           ))}
         </select>

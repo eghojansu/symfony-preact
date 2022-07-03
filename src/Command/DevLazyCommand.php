@@ -2,15 +2,15 @@
 
 namespace App\Command;
 
-use App\Utils;
+use App\Extension\Utils;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\Yaml\Yaml;
 use SebastianBergmann\Timer\Timer;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;

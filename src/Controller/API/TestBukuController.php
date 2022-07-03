@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller\Api;
+namespace App\Controller\API;
 
 use App\Entity\TestBuku;
 use App\Form\TestBukuType;
@@ -12,32 +12,32 @@ class TestBukuController extends Controller
     #[Route('', methods: 'GET')]
     public function home()
     {
-        return $this->api->paginate(TestBuku::class);
+        return $this->api->handlePagination(TestBuku::class);
     }
 
     #[Route('', methods: 'POST')]
     public function store()
     {
-        $this->api->handleJson(TestBukuType::class, new TestBuku(), true);
-
-        return $this->api->saved();
+        return $this->api->handleSave(TestBukuType::class, new TestBuku(), true);
     }
 
     #[Route('/{buku}', methods: 'PUT')]
     public function update(TestBuku $buku)
     {
-        $this->api->handleJson(TestBukuType::class, $buku, false, array(
+        return $this->api->handleSave(TestBukuType::class, $buku, false, array(
             'method' => 'PUT',
         ));
-
-        return $this->api->saved();
     }
 
     #[Route('/{buku}', methods: 'DELETE')]
     public function delete(TestBuku $buku)
     {
-        $this->removeEntity($buku);
+        return $this->api->handleRemove($buku);
+    }
 
-        return $this->api->removed();
+    #[Route('/{buku}/restore', methods: 'PATCH')]
+    public function restore(TestBuku $buku)
+    {
+        return $this->api->handleRestore($buku);
     }
 }

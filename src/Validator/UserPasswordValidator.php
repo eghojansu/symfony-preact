@@ -37,7 +37,7 @@ class UserPasswordValidator extends ConstraintValidator implements ServiceSubscr
             throw new UnexpectedTypeException($password, 'string');
         }
 
-        $user = $this->user();
+        $user = $this->currentUser();
 
         if (!$user instanceof PasswordAuthenticatedUserInterface) {
             throw new ConstraintDefinitionException(sprintf('The "%s" class must implement the "%s" interface.', PasswordAuthenticatedUserInterface::class, get_debug_type($user)));

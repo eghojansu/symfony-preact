@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller\Api;
+namespace App\Controller\API;
 
 use App\Entity\Csuser;
 use App\Form\UserAccessType;
@@ -16,44 +16,44 @@ class UserController extends Controller
     #[Route('', methods: 'GET')]
     public function home()
     {
-        return $this->api->paginate(Csuser::class, array(
+        return $this->api->handlePagination(Csuser::class, array(
             'id <>' => 'su',
-            'id <> self id' => $this->userToken->getUserIdentifier(),
+            'id <> self id' => $this->user->getUserIdentifier(),
         ));
     }
 
     #[Route('', methods: 'POST')]
     public function store()
     {
-        $this->api->handleJson(UserType::class, new Csuser(), true, array(
+        return $this->api->handleSave(UserType::class, new Csuser(), true, array(
             'validation_groups' => array('Default', 'create'),
         ));
-
-        return $this->api->saved();
     }
 
     #[Route('/{user}', methods: 'PUT')]
     public function update(Csuser $user)
     {
-        $this->api->handleJson(UserType::class, $user, false, array(
+        return $this->api->handleSave(UserType::class, $user, false, array(
             'method' => 'PUT',
         ));
-
-        return $this->api->saved();
     }
 
     #[Route('/{user}', methods: 'DELETE')]
     public function delete(Csuser $user)
     {
-        $this->removeEntity($user);
+        return $this->api->handleRemove($user);
+    }
 
-        return $this->api->removed();
+    #[Route('/{user}/restore', methods: 'PATCH')]
+    public function restore(Csuser $user)
+    {
+        return $this->api->handleRestore($user);
     }
 
     #[Route('/{user}/access', methods: 'PATCH')]
     public function access(Csuser $user, UserPasswordHasherInterface $hasher)
     {
-        $this->api->handleJson(
+        return $this->api->handleSave(
             UserAccessType::class,
             $user,
             static function (Csuser $user) use ($hasher) {
@@ -65,7 +65,5 @@ class UserController extends Controller
             },
             array('method' => 'PATCH'),
         );
-
-        return $this->api->saved();
     }
 }

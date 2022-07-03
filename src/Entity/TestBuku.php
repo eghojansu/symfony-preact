@@ -2,10 +2,10 @@
 
 namespace App\Entity;
 
-use App\Entity\Concern\Auditable;
-use App\Entity\Concern\AuditableInterface;
-use App\Repository\TestBukuRepository;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\TestBukuRepository;
+use App\Extension\Auditable\AuditableInterface;
+use App\Extension\Auditable\AuditableTrait;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TestBukuRepository::class)]
@@ -25,7 +25,7 @@ class TestBuku implements AuditableInterface
     #[Assert\NotBlank()]
     private $harga;
 
-    use Auditable;
+    use AuditableTrait;
 
     public function getId(): ?int
     {

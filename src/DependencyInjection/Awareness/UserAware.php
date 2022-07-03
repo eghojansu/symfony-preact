@@ -11,7 +11,7 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 trait UserAware
 {
     /** @var Csuser */
-    private $_user;
+    private $_currentUser;
 
     #[SubscribedService()]
     private function tokenStorage(): TokenStorageInterface
@@ -25,14 +25,14 @@ trait UserAware
         return $this->container->get(__CLASS__.'::'.__FUNCTION__);
     }
 
-    private function user(): Csuser|null
+    private function currentUser(): Csuser|null
     {
-        return $this->_user ?? (
-            $this->_user = ($token = $this->userToken()) ? $this->userRepository()->findUser($token->getUserIdentifier()) : null
+        return $this->_currentUser ?? (
+            $this->_user = ($token = $this->user()) ? $this->userRepository()->findUser($token->getUserIdentifier()) : null
         );
     }
 
-    private function userToken(): JWTUser|null
+    private function user(): JWTUser|null
     {
         return $this->tokenStorage()->getToken()?->getUser();
     }

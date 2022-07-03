@@ -1,36 +1,30 @@
 <?php
 
-namespace App\EventSubscriber;
+namespace App\Extension\API;
 
-use App\Exception\FormViolationException;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpKernel\KernelEvents;
 
-class KernelSubscriber implements EventSubscriberInterface
+#[AutoconfigureTag('kernel.event_listener', array(
+    'event' => KernelEvents::EXCEPTION,
+))]
+class FormViolationListener
 {
-    public function onKernelException(ExceptionEvent $event): void
+    public function __invoke(ExceptionEvent $event)
     {
         $error = $event->getThrowable();
-        $response = match(true) {
-            $error instanceof FormViolationException => static::createFormViolationResponse($error),
-            default => null,
-        };
 
-        if ($response) {
-            $event->setResponse($response);
+        if (!$error instanceof FormViolationException) {
+            return;
         }
+
+        $event->setResponse(static::createResponse($error));
     }
 
-    public static function getSubscribedEvents(): array
-    {
-        return [
-            'kernel.exception' => 'onKernelException',
-        ];
-    }
-
-    private static function createFormViolationResponse(FormViolationException $error): JsonResponse
+    private static function createResponse(FormViolationException $error): JsonResponse
     {
         $errors = static::formErrors($error->getForm());
 

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Csuser;
+use App\Service\Account;
 use App\Repository\CsuserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -10,8 +11,9 @@ use Lexik\Bundle\JWTAuthenticationBundle\Security\User\JWTUser;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 /**
- * @property Csuser $user
- * @property JWTUser $userToken
+ * @property Csuser $currentUser
+ * @property JWTUser $user
+ * @property Account $account
  * @property Request $request
  * @property EntityManagerInterface $em
  */
@@ -21,18 +23,13 @@ abstract class Controller extends AbstractController
     {
         return static::subscribing() + parent::getSubscribedServices() + array(
             'em' => EntityManagerInterface::class,
+            'account' => Account::class,
         );
     }
 
     protected static function subscribing(): array
     {
         return array();
-    }
-
-    protected function removeEntity(object $entity): void
-    {
-        $this->em->remove($entity);
-        $this->em->flush();
     }
 
     public function __get($name)
@@ -44,13 +41,13 @@ abstract class Controller extends AbstractController
         return $this->container->get($name);
     }
 
-    protected function _getUser(): Csuser
+    protected function _getCurrentUser(): Csuser
     {
         /** @var CsuserRepository */
         $repo = $this->em->getRepository(Csuser::class);
 
         /** @var Csuser|null */
-        $user = $repo->findUser($this->userToken->getUserIdentifier());
+        $user = $repo->findUser($this->user->getUserIdentifier());
 
         if (!$user) {
             throw $this->createAccessDeniedException();
@@ -59,7 +56,7 @@ abstract class Controller extends AbstractController
         return $user;
     }
 
-    protected function _getUserToken(): JWTUser
+    protected function _getUser(): JWTUser
     {
         $user = $this->getUser();
 

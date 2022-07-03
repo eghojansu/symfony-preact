@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller\Api;
+namespace App\Controller\API;
 
 use App\Service\Choices;
 use Symfony\Component\Routing\Annotation\Route;

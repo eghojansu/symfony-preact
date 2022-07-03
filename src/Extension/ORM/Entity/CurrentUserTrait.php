@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Entity\Concern;
+namespace App\Extension\ORM\Entity;
 
 use App\Validator as CustomAssert;
 use Symfony\Component\Serializer\Annotation\Ignore;
 use Symfony\Component\Validator\Constraints as Assert;
 
-trait CurrentUser
+trait CurrentUserTrait
 {
     #[Assert\NotBlank(groups: array('current_user'))]
     #[CustomAssert\UserPassword(groups: array('current_user'))]

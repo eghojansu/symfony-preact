@@ -34,7 +34,7 @@ function MainPage({
         text: 'New',
         icon: 'plus-circle',
         variant: 'primary',
-        dropdowns: {
+        dropdown: {
           items: groups,
           onClick: ({ item }) => {
             addTab(`Add child of ${item.name}`, true, 'add', {

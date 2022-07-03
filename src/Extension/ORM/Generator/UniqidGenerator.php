@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Generator;
+namespace App\Extension\ORM\Generator;
 
-use App\Utils;
+use App\Extension\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Id\AbstractIdGenerator;
 

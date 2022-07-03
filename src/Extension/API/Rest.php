@@ -1,22 +1,24 @@
 <?php
 
-namespace App\Service;
+namespace App\Extension\API;
 
+use App\Extension\Utils;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use App\Exception\FormViolationException;
-use App\Utils;
-use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Component\Form\FormInterface;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\Security;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouterInterface;
+use App\Extension\Auditable\AuditableInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-class Api
+class Rest
 {
     const MIN_PAGE_SIZE = 15;
     const MAX_PAGE_SIZE = 75;
@@ -27,6 +29,7 @@ class Api
         private RouterInterface $router,
         private RequestStack $requestStack,
         private EntityManagerInterface $em,
+        private Security $security,
     ) {}
 
     public function json(
@@ -52,7 +55,7 @@ class Api
         return $this->json($payload, null, $headers);
     }
 
-    public function rest(
+    public function data(
         mixed $data = null,
         string $message = null,
         bool $success = true,
@@ -72,7 +75,7 @@ class Api
         int $code = null,
         array $headers = null,
     ): JsonResponse {
-        return $this->rest($data, $message, $success, $code, $headers);
+        return $this->data($data, $message, $success, $code, $headers);
     }
 
     public function saved(
@@ -107,7 +110,7 @@ class Api
             $add['redirect'] = $this->router->generate(...$action);
         }
 
-        return $this->rest(
+        return $this->data(
             ($data ?? array()) + $add,
             'Data has been ' . $done,
             true,
@@ -116,27 +119,50 @@ class Api
         );
     }
 
-    public function handleJson(
+    public function handlePagination(
+        string $entity,
+        array $filters = null,
+        \Closure $modify = null,
+    ): JsonResponse {
+        return $this->data($this->paginate($entity, $filters, $modify));
+    }
+
+    public function handleRemove(
+        object $entity,
+        string|array|bool $action = null,
+        mixed $data = null,
+        array $headers = null,
+    ): JsonResponse {
+        $this->remove($entity);
+
+        return $this->removed($action, $data, $headers);
+    }
+
+    public function handleRestore(
+        AuditableInterface $entity,
+        string|array|bool $action = null,
+        mixed $data = null,
+        array $headers = null,
+    ): JsonResponse {
+        $this->restore($entity);
+
+        return $this->done('restored', $action, $data, $headers);
+    }
+
+    public function handleSave(
         string $formType,
         object $data,
         callable|bool $persist = false,
         array $options = null,
-        Request &$request = null,
-    ): void {
-        $this->handleJsonForm($formType, $data, $options, $request);
+        string|array|bool $action = null,
+        array $headers = null,
+    ): JsonResponse {
+        $this->save($formType, $data, $persist, $options);
 
-        if ($persist) {
-            if (is_callable($persist)) {
-                $persist($data, $this->em);
-            } else {
-                $this->em->persist($data);
-            }
-        }
-
-        $this->em->flush();
+        return $this->saved($action, null, $headers);
     }
 
-    public function handleJsonForm(
+    public function createForm(
         string $type,
         object|array $data = null,
         array $options = null,
@@ -163,9 +189,62 @@ class Api
         return $form;
     }
 
-    public function paginate(string $entity, array $filters = null, \Closure $modify = null): JsonResponse
+    public function save(
+        string $formType,
+        object $data,
+        callable|bool $persist = false,
+        array $options = null,
+        Request &$request = null,
+    ): void {
+        $this->createForm($formType, $data, $options, $request);
+
+        if ($persist) {
+            if (is_callable($persist)) {
+                $persist($data, $this->em);
+            } else {
+                $this->em->persist($data);
+            }
+        }
+
+        $this->em->flush();
+    }
+
+    public function restore(AuditableInterface $entity): void
     {
+        if (!$this->security->isGranted('ROLE_RESTORE')) {
+            throw new AccessDeniedHttpException();
+        }
+
+        if (!$entity->getDeletedAt()) {
+            return;
+        }
+
+        $entity->setDeletedAt(null);
+
+        $this->em->flush();
+    }
+
+    public function remove(object $entity): void
+    {
+        if (
+            $entity instanceof AuditableInterface
+            && $entity->getDeletedAt()
+            && !$this->security->isGranted('ROLE_RESTORE')
+        ) {
+            throw new AccessDeniedHttpException();
+        }
+
+        $this->em->remove($entity);
+        $this->em->flush();
+    }
+
+    public function paginate(
+        string $entity,
+        array $filters = null,
+        \Closure $modify = null,
+    ): array {
         $request = $this->requestStack->getCurrentRequest();
+        $trash = $request->query->getBoolean('trash');
         $page = max(1, $request->query->getInt('page'));
         $size = min(self::MAX_PAGE_SIZE, max(self::MIN_PAGE_SIZE, $request->query->getInt('size')));
         $offset = ($page - 1) * $size;
@@ -173,6 +252,16 @@ class Api
         /** @var EntityRepository */
         $repo = $this->em->getRepository($entity);
         $qb = $repo->createQueryBuilder('a')->orderBy('a.id');
+
+        if (
+            $trash
+            && is_subclass_of($entity, AuditableInterface::class)
+            && $this->security->isGranted('ROLE_RESTORE')
+        ) {
+            $this->em->getFilters()->disable('auditable');
+
+            $qb->andWhere($qb->expr()->isNotNull('a.deletedAt'));
+        }
 
         if ($filters) {
             $pos = 1;
@@ -217,6 +306,6 @@ class Api
             ->setMaxResults($size)
         ;
 
-        return $this->rest(compact('items', 'page', 'size', 'next', 'prev', 'total', 'pages'));
+        return compact('items', 'page', 'size', 'next', 'prev', 'total', 'pages');
     }
 }

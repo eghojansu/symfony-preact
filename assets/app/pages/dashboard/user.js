@@ -1,7 +1,7 @@
 import { withGranted } from '@app/context'
 import useTree from '@app/lib/tree'
 import { NavTab } from '@app/components/tree'
-import Crud, { CrudForm } from '@app/components/crud'
+import Crud, { renderCrudContent } from '@app/components/crud'
 import Form from '@app/components/form-auto'
 
 export default withGranted(MainPage)
@@ -12,13 +12,13 @@ function MainPage() {
       title="Manage User"
       renderContent={renderContent}
       endpoint={endpoint}
-      source={table} />
+      source={table}
+      form={form} />
   )
 }
 
 const endpoint = '/api/user'
-const formProps = {
-  endpoint,
+const form = {
   controls: [
     {
       name: 'id',
@@ -62,16 +62,9 @@ const table = {
 }
 
 const renderContent = tab => (
-  ('edit' === tab?.id && <EditPage tab={tab} />)
-  || ('create' === tab?.id && <CreatePage tab={tab} />)
+  ('edit' === tab?.tag && <EditPage tab={tab} />)
   || null
 )
-
-const CreatePage = ({ tab }) => {
-  return (
-    <CrudForm tab={tab} {...formProps} />
-  )
-}
 
 const EditPage = ({ tab }) => {
   const { data: { item, url: action } } = tab
@@ -85,7 +78,7 @@ const EditPage = ({ tab }) => {
       <NavTab items={items} activeId={activeId} onSelect={handleTabSelect} />
       <div class="pt-3">
         {
-          ('Data' === activeId && (<CrudForm tab={tab} {...formProps} />))
+          ('Data' === activeId && renderCrudContent(tab, endpoint, form))
           || (
             'Access' === activeId && (
               <AccessForm

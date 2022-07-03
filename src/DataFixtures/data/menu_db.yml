@@ -1,0 +1,30 @@
+db:
+    name: Dashboard Menu
+    items:
+        hme:
+            name: Dashboard
+            path: /dashboard
+            icon: house
+        ad:
+            name: Administration
+            icon: gear
+            roles: admin
+            items:
+                adusr:
+                    name: Users
+                    path: /dashboard/adm/user
+                    icon: people
+
+                admnu:
+                    name: Menu
+                    path: /dashboard/adm/menu
+                    icon: menu-up
+        tst:
+            name: Test
+            icon: book
+            roles: admin
+            items:
+                tstbk:
+                    name: Daftar Buku
+                    path: /dashboard/test/buku
+                    icon: book

@@ -37,6 +37,61 @@ export const PaginatedTable = ({
   )
 }
 
+export const TableView = ({
+  bordered = true,
+  hover = true,
+  striped = false,
+  class: clsa,
+  columns,
+  item,
+  children,
+  toolbar,
+}) => {
+  return (
+    <table class={clsx(
+      'table table-view',
+      bordered && 'table-bordered',
+      striped && 'table-striped',
+      hover && 'table-hover',
+      clsa,
+    )}>
+      <tbody>
+        {toolbar && (
+          <>
+            <tr><td colspan="2"><Toolbar {...toolbar} /></td></tr>
+            <tr><td colspan="2"></td></tr>
+          </>
+        )}
+        {columns.length < 1 && (
+          <tr><td><em>No data available</em></td></tr>
+        )}
+        {columns.map(column => (
+          <TableRowView key={column.name} column={column} item={item} />
+        ))}
+        {children}
+      </tbody>
+    </table>
+  )
+}
+
+const TableRowView = ({
+  column,
+  item,
+}) => {
+  if (column.separator) {
+    return (
+      <tr><td colspan="2"></td></tr>
+    )
+  }
+
+  return (
+    <tr>
+      <TableHead {...column} />
+      <TableData item={item} {...column} />
+    </tr>
+  )
+}
+
 const TableRowHead = ({ columns }) => (
   <tr>
     {columns.map(column => (
@@ -95,12 +150,15 @@ function Table ({
   columns = [],
   items = [],
   keys: initialKeys = [],
-  detailable,
-  editable = true,
-  removable = true,
-  onAction,
+  rowAction = 'RUD',
+  deletedColumn = 'deletedAt',
+  onRowAction,
 }) {
-  const hasRowActions = (detailable || editable || removable)
+  const viewable = rowAction && rowAction.includes('R')
+  const editable = rowAction && rowAction.includes('U')
+  const removable = rowAction && rowAction.includes('D')
+  const restorable = rowAction && rowAction.includes('O')
+  const hasRowActions = (viewable || editable || removable || restorable)
   const headers = columns.reduce((headers, column) => {
     const id = `row-${column.rowId || 1}`
     const header = headers.find(header => header.id === id) || { id, columns: [] }
@@ -125,26 +183,37 @@ function Table ({
   const keys = initialKeys.concat(columns.filter(column => column.key).map(column => column.name))
   const colSpan = headers.reduce((max, header) => Math.max(max, header.columns.length), 0)
   const empty = !items || items.length < 1
-  const handleRowAction = row => args => onAction && onAction({
+  const refetchRow = row => () => items.find(item => keys.every(
+    key => (key in item) && (key in row) && item[key] === row[key]
+  )) || row
+  const handleRowAction = row => args => onRowAction && onRowAction({
     ...args,
     row,
     keys,
+    columns,
+    refetch: refetchRow(row),
   })
   const renderRowAction = hasRowActions ? ({ item }) => {
+    const isDeleted = deletedColumn && item[deletedColumn] ? true : false
     const groups = [
       {
         label: "Row actions",
         size: 'sm',
         items: [
-          ...(detailable ? [{
+          ...(viewable && !isDeleted ? [{
             id: 'view',
             icon: 'eye',
             variant: 'info',
           }] : []),
-          ...(editable ? [{
+          ...(editable && !isDeleted ? [{
             id: 'edit',
             icon: 'pencil',
             variant: 'success',
+          }] : []),
+          ...(restorable && isDeleted ? [{
+            id: 'restore',
+            icon: 'arrow-counterclockwise',
+            variant: 'warning',
           }] : []),
           ...(removable ? [{
             id: 'remove',

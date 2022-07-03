@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Form\Extension;
+namespace App\Form;
 
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType as BaseType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
