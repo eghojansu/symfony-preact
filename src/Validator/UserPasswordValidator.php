@@ -4,21 +4,18 @@ namespace App\Validator;
 
 use App\Validator\UserPassword;
 use Symfony\Component\Validator\Constraint;
-use App\DependencyInjection\Awareness\UserAware;
+use App\Service\RequestContext;
 use Symfony\Component\PasswordHasher\Hasher\PasswordHasherFactoryInterface;
 use Symfony\Component\Validator\ConstraintValidator;
-use Symfony\Contracts\Service\ServiceSubscriberTrait;
-use Symfony\Contracts\Service\ServiceSubscriberInterface;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
-class UserPasswordValidator extends ConstraintValidator implements ServiceSubscriberInterface
+class UserPasswordValidator extends ConstraintValidator
 {
-    use ServiceSubscriberTrait, UserAware;
-
     public function __construct(
         private PasswordHasherFactoryInterface $hasherFactory,
+        private RequestContext $requestContext,
     ) {}
 
     public function validate($password, Constraint $constraint)
@@ -37,7 +34,7 @@ class UserPasswordValidator extends ConstraintValidator implements ServiceSubscr
             throw new UnexpectedTypeException($password, 'string');
         }
 
-        $user = $this->currentUser();
+        $user = $this->requestContext->currentUser();
 
         if (!$user instanceof PasswordAuthenticatedUserInterface) {
             throw new ConstraintDefinitionException(sprintf('The "%s" class must implement the "%s" interface.', PasswordAuthenticatedUserInterface::class, get_debug_type($user)));

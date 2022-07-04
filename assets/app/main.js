@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import axios from 'axios'
 import { storage, AppContext } from './lib/shared'
 import notify, { confirm } from './lib/notify'
@@ -9,14 +9,14 @@ export default ({ children }) => {
     fetching: false,
     loading: true,
     userFetched: false,
+    logged: false,
     user: null,
     menu: null,
-    token: null,
     cache: {},
   })
   const [grants, grantsSet] = useState({})
-  const isGuest = useMemo(() => !state.token, [state.token])
-  const isLogin = useMemo(() => !!state.token, [state.token])
+  const isGuest = useMemo(() => !state.logged, [state.logged])
+  const isLogin = useMemo(() => state.logged, [state.logged])
   const request = (() => {
     const req = axios.create({
       headers: {
@@ -31,10 +31,12 @@ export default ({ children }) => {
     )
     req.interceptors.request.use(
       config => {
+        const token = storage.getToken()
+
         stateUp({ fetching: true })
 
-        if (!config.anonymous && state.token) {
-          config.headers['Authorization'] = `Bearer ${state.token}`
+        if (!config.anonymous && token) {
+          config.headers['Authorization'] = `Bearer ${token}`
         }
 
         return config
@@ -68,7 +70,7 @@ export default ({ children }) => {
 
         stateUp({ fetching: false })
 
-        if (state.token && origin.response?.status === 401) {
+        if (state.logged && origin.response?.status === 401) {
           logout(false, response.message, false, {
             title: response.title,
           })
@@ -93,8 +95,12 @@ export default ({ children }) => {
       ...cache,
     },
   }))
+  const setGrants = (path, granting, granted) => grantsSet(grants => ({
+    ...grants,
+    [path]: { granting, granted },
+  }))
   const isGranted = async path => {
-    if (!state.token) {
+    if (!state.logged) {
       return true
     }
 
@@ -102,11 +108,11 @@ export default ({ children }) => {
       return grants[path].granted
     }
 
-    grantsSet(grants => ({ ...grants, [path] : { granting: true }}))
+    setGrants(path, true)
 
     const { data: { granted = false } = {} } = await request('/api/account/access', { params: { path }})
 
-    grantsSet(grants => ({ ...grants, [path] : { granting: false, granted }}))
+    setGrants(path, false, granted)
 
     return granted
   }
@@ -135,8 +141,7 @@ export default ({ children }) => {
     }
 
     await storage.clear()
-
-    stateUp({ user: null, userFetched: null, token: null, menu: null })
+    stateUp({ logged: false, user: null, userFetched: null, token: null, menu: null })
     grantsSet({})
   }
   const login = async data => {
@@ -144,8 +149,8 @@ export default ({ children }) => {
     const { token } = response?.data || {}
 
     if (token) {
+      stateSet({ logged: true })
       storage.setToken(token)
-      stateUp({ token })
     }
 
     return response
@@ -156,7 +161,7 @@ export default ({ children }) => {
     stateUp({ user, userFetched: true })
   }
   const loadMenu = async () => {
-    const { data } = await request.get('/api/account/menu?roots=top,db')
+    const { data } = await request.get('/api/account/menu')
     const menu = normalizeMenu(data) || {}
 
     await storage.setMenu(menu)
@@ -166,11 +171,12 @@ export default ({ children }) => {
     await request('/api/account')
   }
   const initialize = async () => {
-    const menu = await storage.getMenu()
     const token = storage.getToken()
 
     if (token) {
-      stateUp({ token, menu })
+      const menu = await storage.getMenu()
+
+      stateUp({ menu, logged: true })
     }
 
     stateUp({ loading: false })
@@ -245,10 +251,8 @@ export default ({ children }) => {
     }
   }, [state.fetching])
   useEffect(() => {
-    state.token && (
-      state.menu ? checkAuth() : loadMenu()
-    )
-  }, [state.token, state.menu])
+    state.logged && (state.menu ? checkAuth() : loadMenu())
+  }, [state.logged, state.menu])
   useEffect(() => {
     const removeListeners = registerEventListeners()
 

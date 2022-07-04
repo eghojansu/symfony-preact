@@ -5,24 +5,24 @@ namespace App\Extension\Auditable;
 use App\Entity\Csuser;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Event\OnFlushEventArgs;
-use App\DependencyInjection\Awareness\UserAware;
-use Symfony\Contracts\Service\ServiceSubscriberTrait;
-use Symfony\Contracts\Service\ServiceSubscriberInterface;
+use App\Service\RequestContext;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
 #[AutoconfigureTag('doctrine.event_listener', array(
     'event' => Events::onFlush,
 ))]
-class Listener implements ServiceSubscriberInterface
+class Listener
 {
-    use ServiceSubscriberTrait, UserAware;
+    public function __construct(
+        private RequestContext $requestContext,
+    ) {}
 
     public function onFlush(OnFlushEventArgs $args)
     {
         $em = $args->getEntityManager();
         $uow = $em->getUnitOfWork();
         $now = new \DateTime();
-        $user = $this->currentUser();
+        $user = $this->requestContext->currentUser();
 
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
             if ($entity instanceof AuditableInterface && $entity->isAuditable()) {

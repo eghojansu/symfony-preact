@@ -61,11 +61,7 @@ function MainPage({
     tree.add('Menu')
   }, null, tab => ({ ...tab, refresh: loadBoth }))
   const loadData = async () => {
-    const params = {
-      roots: groups.map(group => group.id).join(','),
-    }
     const { data } = await request(endpoint, {
-      params,
       signal: menuRef.current.cancel.signal,
     })
 
@@ -192,13 +188,13 @@ function MainPage({
       onTabClose={handleTabClose}
       onTabSelect={handleTabSelect}>
       {
-        ('Menu' === activeId && (
+        ('menu' === activeId && (
           <MainTab
             groups={groups}
             menu={menu}
             createActionGroupHandler={createActionGroupHandler} />
         ))
-        || (['add', 'edit'].includes(activeItem?.id) && (
+        || (['add', 'edit'].includes(activeItem?.tag) && (
           <MenuForm key={activeItem.text} tab={activeItem} />
         ))
         || null
