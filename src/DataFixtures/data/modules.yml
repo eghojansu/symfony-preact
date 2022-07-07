@@ -1,0 +1,6 @@
+user_list: ~
+user_delete: ~
+manage_user:
+    items:
+        - user_create
+        - user_edit

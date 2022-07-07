@@ -8,8 +8,11 @@ use App\Repository\CsmenuRepository;
 use Symfony\Component\Security\Core\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
 
-class Menu
+final class Menu
 {
+    const ROOT_DASHBOARD = 'db';
+    const ROOT_TOP = 'top';
+
     public function __construct(
         private CsmenuRepository $repo,
         private Security $security,
@@ -26,7 +29,8 @@ class Menu
         Csmenu $parent = null,
         string $matcher = null,
         string $hint = null,
-        bool $active = true,
+        bool $active = null,
+        bool $hidden = null,
         array $attrs = null,
     ): Csmenu {
         $menu = new Csmenu();
@@ -37,7 +41,8 @@ class Menu
         $menu->setIcon($icon);
         $menu->setHint($hint);
         $menu->setRoles(Utils::split($roles));
-        $menu->setActive($active);
+        $menu->setActive($active ?? true);
+        $menu->setHidden($hidden ?? false);
         $menu->setMatcher($matcher);
         $menu->setParent($parent);
         $menu->setAttrs($attrs);
@@ -47,7 +52,7 @@ class Menu
 
     public static function createFromArray(array $menu): Csmenu
     {
-        return static::create(
+        return self::create(
             $menu['priority'],
             $menu['id'],
             $menu['name'],
@@ -57,41 +62,9 @@ class Menu
             $menu['parent'] ?? null,
             $menu['matcher'] ?? null,
             $menu['hint'] ?? null,
-            $menu['active'] ?? true,
+            $menu['active'] ?? null,
+            $menu['hidden'] ?? null,
             $menu['attrs'] ?? null,
-        );
-    }
-
-    public static function createModule(
-        string $id = null,
-        string $name = null,
-        string $path = null,
-        string|array $roles = null,
-        Csmenu $parent = null,
-        string $matcher = null,
-    ): Csmenu {
-        $menu = new Csmenu();
-        $menu->setId($id ?? Utils::random());
-        $menu->setName($name ?? Utils::truncate($path, 75));
-        $menu->setPath($path);
-        $menu->setRoles(Utils::split($roles));
-        $menu->setActive(true);
-        $menu->setHidden(true);
-        $menu->setMatcher($matcher);
-        $menu->setParent($parent);
-
-        return $menu;
-    }
-
-    public static function createModuleFromArray(array $module): Csmenu
-    {
-        return static::createModule(
-            $module['id'] ?? null,
-            $module['name'] ?? null,
-            $module['path'] ?? null,
-            $module['roles'] ?? null,
-            $module['parent'] ?? null,
-            $module['matcher'] ?? null,
         );
     }
 
@@ -105,7 +78,7 @@ class Menu
     public function getTree(bool $activable): array
     {
         return $this->buildTree(
-            array(Csmenu::ROOT_DASHBOARD, Csmenu::ROOT_TOP),
+            array(self::ROOT_DASHBOARD, self::ROOT_TOP),
             $this->repo->getMenu(),
             'client',
             $activable,
@@ -115,7 +88,7 @@ class Menu
     public function getEditingTree(): array
     {
         return $this->buildTree(
-            array(Csmenu::ROOT_DASHBOARD, Csmenu::ROOT_TOP),
+            array(self::ROOT_DASHBOARD, self::ROOT_TOP),
             $this->repo->findAll(),
         );
     }
@@ -127,37 +100,11 @@ class Menu
         return Utils::reduce(
             $tree,
             function (array $entities, array $item, string|int $id) use ($parent, &$priority) {
-                $menu = static::createFromArray(array_replace(array(
+                $menu = self::createFromArray(array_replace(array(
                     'id' => is_int($id) ? Utils::random(8) : $id,
                     'priority' => $priority++,
                 ), $item, array(
                     'parent' => $parent,
-                )));
-
-                $entities[$menu->getId()] = $menu;
-
-                return $entities + $this->toEntities(
-                    $item['items'] ?? array(),
-                    $menu,
-                );
-            },
-            array(),
-        );
-    }
-
-    public function toModuleEntities(array $tree, Csmenu $parent = null): array
-    {
-        $withParent = $parent ?? $this->repo->find(Csmenu::ROOT_MODULE) ?? static::createModule(
-            Csmenu::ROOT_MODULE,
-        );
-
-        return Utils::reduce(
-            $tree,
-            function (array $entities, array $item, string|int $id) use ($withParent, &$priority) {
-                $menu = static::createFromArray(array_replace(array(
-                    'id' => is_int($id) ? Utils::random(8) : $id,
-                ), $item, array(
-                    'parent' => $withParent,
                 )));
 
                 $entities[$menu->getId()] = $menu;
@@ -250,10 +197,7 @@ class Menu
             array(),
         );
 
-        uasort(
-            $menu,
-            static fn (array $a, array $b) => $a['order'] <=> $b['order'],
-        );
+        uasort($menu, static fn (array $a, array $b) => $a['order'] <=> $b['order']);
 
         return $menu;
     }
@@ -284,10 +228,8 @@ class Menu
     private function active(Csmenu $menu, array $children): bool
     {
         return (
-            $this->isMatch($menu) || Utils::some(
-                $children,
-                static fn (array $child) => $child['active'],
-            )
+            $this->isMatch($menu)
+            || Utils::some($children, static fn (array $child) => $child['active'])
         );
     }
 }

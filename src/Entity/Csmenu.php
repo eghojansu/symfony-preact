@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use App\Extension\Utils;
 use Doctrine\ORM\Mapping as ORM;
 use App\Validator as CustomAssert;
 use App\Repository\CsmenuRepository;
@@ -17,10 +16,6 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[UniqueEntity('id', groups: array('create'))]
 class Csmenu implements AuditableInterface
 {
-    const ROOT_DASHBOARD = 'db';
-    const ROOT_MODULE = 'mod';
-    const ROOT_TOP = 'top';
-
     #[ORM\Id]
     #[ORM\GeneratedValue('NONE')]
     #[ORM\Column(type: 'string', length: 10, name: 'menuid')]
@@ -78,54 +73,6 @@ class Csmenu implements AuditableInterface
     public function __construct()
     {
         $this->children = new ArrayCollection();
-    }
-
-    public static function create(
-        int $priority,
-        string $id,
-        string $name,
-        string $path = null,
-        string $icon = null,
-        string|array $roles = null,
-        self $parent = null,
-        string $matcher = null,
-        string $hint = null,
-        bool $active = true,
-    ): static {
-        $menu = new static();
-        $menu->setPriority($priority);
-        $menu->setId($id);
-        $menu->setName($name);
-        $menu->setPath($path);
-        $menu->setIcon($icon);
-        $menu->setHint($hint);
-        $menu->setRoles(Utils::split($roles));
-        $menu->setActive($active);
-        $menu->setMatcher($matcher);
-        $menu->setParent($parent);
-
-        return $menu;
-    }
-
-    public static function createRule(
-        string $path,
-        string|array $roles,
-        self $parent = null,
-        string $name = null,
-        string $id = null,
-        string $matcher = null,
-    ): static {
-        $menu = new static();
-        $menu->setId($id ?? Utils::random());
-        $menu->setName($name ?? Utils::truncate($path, 75));
-        $menu->setPath($path);
-        $menu->setRoles(Utils::split($roles));
-        $menu->setActive(true);
-        $menu->setHidden(true);
-        $menu->setMatcher($matcher);
-        $menu->setParent($parent);
-
-        return $menu;
     }
 
     public function getId(): ?string

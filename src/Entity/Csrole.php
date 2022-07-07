@@ -2,13 +2,15 @@
 
 namespace App\Entity;
 
+use App\Extension\Auditable\AuditableInterface;
+use App\Extension\Auditable\AuditableTrait;
 use App\Repository\CsroleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CsroleRepository::class)]
-class Csrole
+class Csrole implements AuditableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue('NONE')]
@@ -18,19 +20,21 @@ class Csrole
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private $description;
 
-    #[ORM\ManyToMany(targetEntity: Csperm::class, inversedBy: 'roles')]
-    #[ORM\JoinTable('csrolep')]
+    #[ORM\ManyToMany(targetEntity: Csmod::class, inversedBy: 'roles')]
+    #[ORM\JoinTable('csrolem')]
     #[ORM\JoinColumn('role', 'role')]
-    #[ORM\InverseJoinColumn('perm', 'perm')]
-    private $permissions;
+    #[ORM\InverseJoinColumn('modid', 'modid')]
+    private $modules;
 
     #[ORM\ManyToMany(targetEntity: Csuser::class, mappedBy: 'rbRoles')]
     #[ORM\JoinColumn(name: 'role', referencedColumnName: 'role')]
     private $users;
 
+    use AuditableTrait;
+
     public function __construct()
     {
-        $this->permissions = new ArrayCollection();
+        $this->modules = new ArrayCollection();
         $this->users = new ArrayCollection();
     }
 
@@ -59,25 +63,25 @@ class Csrole
     }
 
     /**
-     * @return Collection<int, Csperm>
+     * @return Collection<int, Csmod>
      */
-    public function getPermissions(): Collection
+    public function getModules(): Collection
     {
-        return $this->permissions;
+        return $this->modules;
     }
 
-    public function addPermission(Csperm $permission): self
+    public function addModule(Csmod $module): self
     {
-        if (!$this->permissions->contains($permission)) {
-            $this->permissions[] = $permission;
+        if (!$this->modules->contains($module)) {
+            $this->modules[] = $module;
         }
 
         return $this;
     }
 
-    public function removePermission(Csperm $permission): self
+    public function removeModule(Csmod $module): self
     {
-        $this->permissions->removeElement($permission);
+        $this->modules->removeElement($module);
 
         return $this;
     }

@@ -2,13 +2,17 @@
 
 namespace App\Service;
 
+use App\Entity\Csrole;
 use App\Entity\Csuser;
+use App\Extension\Utils;
+use App\Repository\CsroleRepository;
 use Symfony\Component\Security\Core\Security;
 
 class Choices
 {
     public function __construct(
         private Security $security,
+        private CsroleRepository $roles,
     ) {}
 
     public function support(string $name): bool
@@ -26,12 +30,20 @@ class Choices
 
     public function roles()
     {
-        $roles = array(
-            Csuser::ROLE_ADMIN => 'ROLE_ADMIN',
+        $roles = Utils::reduce(
+            $this->roles->findAll(),
+            static fn (array $roles, Csrole $role) => $roles + array(
+                $role->getId() => $role->getDescription(),
+            ),
+            array(),
         );
 
+        if ($this->security->isGranted('ROLE_ADMIN')) {
+            $roles['Administrator'] = 'ROLE_ADMIN';
+        }
+
         if ($this->security->isGranted('ROLE_ROOT')) {
-            $roles[Csuser::ROLE_ROOT] = 'ROLE_ROOT';
+            $roles['Root'] = 'ROLE_ROOT';
         }
 
         return $roles;

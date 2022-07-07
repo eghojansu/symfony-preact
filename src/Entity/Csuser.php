@@ -21,9 +21,6 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 #[UniqueEntity('id', groups: array('create'))]
 class Csuser implements UserInterface, PasswordAuthenticatedUserInterface, AuditableInterface
 {
-    const ROLE_ADMIN = 'Admin';
-    const ROLE_ROOT = 'Root';
-
     #[ORM\Id]
     #[ORM\GeneratedValue('NONE')]
     #[ORM\Column(type: 'string', length: 8, name: 'userid')]

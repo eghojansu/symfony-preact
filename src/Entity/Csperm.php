@@ -2,13 +2,15 @@
 
 namespace App\Entity;
 
+use App\Extension\Auditable\AuditableInterface;
+use App\Extension\Auditable\AuditableTrait;
 use App\Repository\CspermRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CspermRepository::class)]
-class Csperm
+class Csperm implements AuditableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue('NONE')]
@@ -18,12 +20,14 @@ class Csperm
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private $description;
 
-    #[ORM\ManyToMany(targetEntity: Csrole::class, mappedBy: 'permissions')]
-    private $roles;
+    #[ORM\ManyToMany(targetEntity: Csmod::class, mappedBy: 'permissions')]
+    private $modules;
+
+    use AuditableTrait;
 
     public function __construct()
     {
-        $this->roles = new ArrayCollection();
+        $this->modules = new ArrayCollection();
     }
 
     public function getId(): ?string
@@ -51,27 +55,27 @@ class Csperm
     }
 
     /**
-     * @return Collection<int, Csrole>
+     * @return Collection<int, Csmod>
      */
-    public function getRoles(): Collection
+    public function getModules(): Collection
     {
-        return $this->roles;
+        return $this->modules;
     }
 
-    public function addRole(Csrole $role): self
+    public function addModule(Csmod $module): self
     {
-        if (!$this->roles->contains($role)) {
-            $this->roles[] = $role;
-            $role->addPermission($this);
+        if (!$this->modules->contains($module)) {
+            $this->modules[] = $module;
+            $module->addPermission($this);
         }
 
         return $this;
     }
 
-    public function removeRole(Csrole $role): self
+    public function removeModule(Csmod $module): self
     {
-        if ($this->roles->removeElement($role)) {
-            $role->removePermission($this);
+        if ($this->modules->removeElement($module)) {
+            $module->removePermission($this);
         }
 
         return $this;
