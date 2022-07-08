@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'preact/hooks'
+import { useEffect, useRef, useMemo } from 'preact/hooks'
 import { withContext } from '../context'
 import notify, { confirm } from '../lib/notify'
 import useTree from '../lib/tree'
@@ -14,14 +14,12 @@ export default withContext(Crud)
 function Crud ({
   ctx: {
     request,
-    isGranted,
   },
   endpoint,
   items: initialItems,
   toolbar: initialToolbar,
   source = {},
   form = {},
-  action = 'CRUDO',
   idKey,
   titleKey,
   detailColumns,
@@ -33,12 +31,8 @@ function Crud ({
     cancel: new AbortController(),
   })
   const cancel = () => crudRef.current.cancel.abort()
-  const [restoreX, restoreXSet] = useState(false)
-  const creation = action && action.includes('C')
-  const restore = action && action.includes('O')
   const table = useTable({
     source: endpoint,
-    rowAction: action,
     onRowAction: async args => {
       const {
         item: { id: action },
@@ -86,6 +80,7 @@ function Crud ({
 
         tree.add(text, true, action, {
           data: { url, item, keys },
+          row: args,
         })
 
         return
@@ -96,6 +91,7 @@ function Crud ({
 
         tree.add(text, true, action, {
           data: { url, item, keys, columns: detailColumns || columns },
+          row: args,
         })
 
         return
@@ -115,7 +111,7 @@ function Crud ({
     label: 'Crud actions toolbar',
     ...(initialToolbar || {}),
     groups: [
-      ...(creation ? [
+      ...(table.action.create ? [
         {
           text: 'New',
           icon: 'plus-circle',
@@ -123,7 +119,7 @@ function Crud ({
           onClick: () => {
             tree.add('Create', true)
           },
-          ...(restoreX ? {
+          ...(table.action.restore ? {
             dropdown: {
               items: [
                 {
@@ -144,12 +140,7 @@ function Crud ({
       ] : []),
       ...(initialToolbar?.groups || []),
     ]
-  }), [restoreX, table.params.trash])
-  const loadGranted = async () => {
-    const granted = await isGranted('restore')
-
-    crudRef.current.loaded && restoreXSet(granted)
-  }
+  }), [table.action, table.params.trash])
 
   useEffect(() => {
     if (undefined === table.params.trash) {
@@ -160,13 +151,9 @@ function Crud ({
       { ...tree.getItem('main'), text: table.params.trash ? 'Main (trash)' : 'Main' }
     ])
   }, [table.params.trash])
-  useEffect(() => {
-    restore && loadGranted()
-
-    return () => {
-      crudRef.current.loaded = false
-      cancel()
-    }
+  useEffect(() => () => {
+    crudRef.current.loaded = false
+    cancel()
   }, [])
 
   return (

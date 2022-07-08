@@ -204,7 +204,6 @@ final class Menu
 
     private function skip(Csmenu $menu): bool
     {
-        return false;
         return (
             $menu->getRoles()
             && Utils::all(

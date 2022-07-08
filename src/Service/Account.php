@@ -63,6 +63,7 @@ class Account
     public function profileUpdate(): void
     {
         $this->api->handleSave(AccountType::class, $this->requestContext->currentUser());
+        $this->record('update profile');
     }
 
     public function passwordUpdate(): void
@@ -77,5 +78,6 @@ class Account
                 ),
             ),
         );
+        $this->record('update password');
     }
 }

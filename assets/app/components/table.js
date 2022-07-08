@@ -153,11 +153,13 @@ function Table ({
   rowAction = 'RUD',
   deletedColumn = 'deletedAt',
   onRowAction,
+  action,
 }) {
   const viewable = rowAction && rowAction.includes('R')
   const editable = rowAction && rowAction.includes('U')
   const removable = rowAction && rowAction.includes('D')
   const restorable = rowAction && rowAction.includes('O')
+  const destroyable = rowAction && rowAction.includes('E')
   const hasRowActions = (viewable || editable || removable || restorable)
   const headers = columns.reduce((headers, column) => {
     const id = `row-${column.rowId || 1}`
@@ -191,6 +193,7 @@ function Table ({
     row,
     keys,
     columns,
+    action,
     refetch: refetchRow(row),
   })
   const renderRowAction = hasRowActions ? ({ item }) => {
@@ -215,7 +218,7 @@ function Table ({
             icon: 'arrow-counterclockwise',
             variant: 'warning',
           }] : []),
-          ...(removable ? [{
+          ...(removable && (!isDeleted || destroyable) ? [{
             id: 'remove',
             icon: 'trash',
             variant: 'danger',

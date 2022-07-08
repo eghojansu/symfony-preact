@@ -23,11 +23,15 @@ class Csperm implements AuditableInterface
     #[ORM\ManyToMany(targetEntity: Csmod::class, mappedBy: 'permissions')]
     private $modules;
 
+    #[ORM\ManyToMany(targetEntity: Csrole::class, mappedBy: 'permissions')]
+    private $roles;
+
     use AuditableTrait;
 
     public function __construct()
     {
         $this->modules = new ArrayCollection();
+        $this->roles = new ArrayCollection();
     }
 
     public function getId(): ?string
@@ -76,6 +80,33 @@ class Csperm implements AuditableInterface
     {
         if ($this->modules->removeElement($module)) {
             $module->removePermission($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Csrole>
+     */
+    public function getRoles(): Collection
+    {
+        return $this->roles;
+    }
+
+    public function addRole(Csrole $role): self
+    {
+        if (!$this->roles->contains($role)) {
+            $this->roles[] = $role;
+            $role->addPermission($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRole(Csrole $role): self
+    {
+        if ($this->roles->removeElement($role)) {
+            $role->removePermission($this);
         }
 
         return $this;

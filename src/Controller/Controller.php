@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Csuser;
+use App\Extension\Utils;
 use App\Service\Account;
 use App\Repository\CsuserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -39,6 +40,14 @@ abstract class Controller extends AbstractController
         }
 
         return $this->container->get($name);
+    }
+
+    protected function someGranted(string ...$checks): bool
+    {
+        return Utils::some(
+            Utils::flatten($checks),
+            fn (string $role) => $this->isGranted($role),
+        );
     }
 
     protected function _getCurrentUser(): Csuser

@@ -23,6 +23,11 @@ class Utils
         );
     }
 
+    public static function flatten(string|array|null ...$args): array
+    {
+        return array_merge(...array_map(static fn ($arg) => static::split($arg), $args));
+    }
+
     public static function random(int $len = 8): string
     {
         return bin2hex(random_bytes(min(4, ($len - ($len % 2)) / 2)));

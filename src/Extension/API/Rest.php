@@ -129,11 +129,12 @@ class Rest
 
     public function handleRemove(
         object $entity,
+        string $destroyRole = null,
         string|array|bool $action = null,
         mixed $data = null,
         array $headers = null,
     ): JsonResponse {
-        $this->remove($entity);
+        $this->remove($entity, $destroyRole);
 
         return $this->removed($action, $data, $headers);
     }
@@ -211,10 +212,6 @@ class Rest
 
     public function restore(AuditableInterface $entity): void
     {
-        if (!$this->security->isGranted('ROLE_RESTORE')) {
-            throw new AccessDeniedHttpException();
-        }
-
         if (!$entity->getDeletedAt()) {
             return;
         }
@@ -224,14 +221,15 @@ class Rest
         $this->em->flush();
     }
 
-    public function remove(object $entity): void
+    public function remove(object $entity, string $destroyRole = null): void
     {
         if (
             $entity instanceof AuditableInterface
             && $entity->getDeletedAt()
-            && !$this->security->isGranted('ROLE_RESTORE')
+            && $destroyRole
+            && !$this->security->isGranted($destroyRole)
         ) {
-            throw new AccessDeniedHttpException();
+            throw $this->createAccessDeniedException();
         }
 
         $this->em->remove($entity);
@@ -307,5 +305,10 @@ class Rest
         ;
 
         return compact('items', 'page', 'size', 'next', 'prev', 'total', 'pages');
+    }
+
+    private function createAccessDeniedException(): AccessDeniedHttpException
+    {
+        return new AccessDeniedHttpException();
     }
 }

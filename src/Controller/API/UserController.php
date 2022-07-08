@@ -10,7 +10,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/user')]
-#[IsGranted('ROLE_ADMIN')]
+#[IsGranted('usrview')]
 class UserController extends Controller
 {
     #[Route('', methods: 'GET')]
@@ -23,6 +23,7 @@ class UserController extends Controller
     }
 
     #[Route('', methods: 'POST')]
+    #[IsGranted('usrcreate')]
     public function store()
     {
         return $this->api->handleSave(UserType::class, new Csuser(), true, array(
@@ -31,6 +32,7 @@ class UserController extends Controller
     }
 
     #[Route('/{user}', methods: 'PUT')]
+    #[IsGranted('usrupdate')]
     public function update(Csuser $user)
     {
         return $this->api->handleSave(UserType::class, $user, false, array(
@@ -39,18 +41,21 @@ class UserController extends Controller
     }
 
     #[Route('/{user}', methods: 'DELETE')]
+    #[IsGranted('usrdelete')]
     public function delete(Csuser $user)
     {
-        return $this->api->handleRemove($user);
+        return $this->api->handleRemove($user, 'usrdestroy');
     }
 
     #[Route('/{user}/restore', methods: 'PATCH')]
+    #[IsGranted('usrrestore')]
     public function restore(Csuser $user)
     {
         return $this->api->handleRestore($user);
     }
 
     #[Route('/{user}/access', methods: 'PATCH')]
+    #[IsGranted('usraccess')]
     public function access(Csuser $user, UserPasswordHasherInterface $hasher)
     {
         return $this->api->handleSave(

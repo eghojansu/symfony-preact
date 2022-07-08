@@ -3,6 +3,7 @@
 namespace App\Controller\API;
 
 use App\Extension\RBAC\Menu;
+use App\Extension\Utils;
 use App\Repository\CshistRepository;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -54,12 +55,22 @@ class AccountController extends Controller
     #[Route('/access', methods: 'GET')]
     public function access(Menu $menu)
     {
-        // TODO: check multiple access
-        $path = $this->request->query->get('path');
-        $granted = match(true) {
-            str_starts_with($path, '/') => $menu->isGranted($path),
-            default => $this->isGranted('ROLE_' . strtoupper($path)),
-        };
+        $paths = $this->request->get('paths');
+        $granted = array_reduce(
+            Utils::split($paths),
+            fn (array $granted, string $path) => (
+                $granted + array(
+                    $path => match(true) {
+                        str_starts_with($path, '/') => $menu->isGranted($path),
+                        default => (
+                            $this->isGranted('ROLE_' . strtoupper($path)) ||
+                            $this->isGranted($path)
+                        ),
+                    },
+                )
+            ),
+            array(),
+        );
 
         return $this->api->data(compact('granted'));
     }

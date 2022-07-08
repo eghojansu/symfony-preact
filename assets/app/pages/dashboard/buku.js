@@ -30,6 +30,7 @@ const form = {
 }
 const table = {
   keys: ['id'],
+  access: 'bk',
   columns: [
     {
       name: 'nama',

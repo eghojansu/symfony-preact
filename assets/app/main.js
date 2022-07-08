@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'preact/hooks'
 import axios from 'axios'
 import { storage, AppContext } from './lib/shared'
 import notify, { confirm } from './lib/notify'
-import { createElement, normalizeMenu } from './lib/common'
+import { createElement, normalizeMenu, split } from './lib/common'
 
 export default ({ children }) => {
   const [state, stateSet] = useState({
@@ -95,26 +95,44 @@ export default ({ children }) => {
       ...cache,
     },
   }))
-  const setGrants = (path, granting, granted) => grantsSet(grants => ({
+  const setGrants = (paths, granting, granted) => grantsSet(grants => ({
     ...grants,
-    [path]: { granting, granted },
+    ...Object.fromEntries(paths.map(path => [path, {
+      granting,
+      granted: granted && path in granted && granted[path],
+    }])),
   }))
-  const isGranted = async path => {
+  const isGranted = async (path, raw) => {
     if (!state.logged) {
       return true
     }
 
-    if (path in grants && !grants[path].granting) {
-      return grants[path].granted
+    const paths = split(path)
+    const alreadyGranted = paths.some(path => (path in grants) && !grants[path].granting)
+
+    if (alreadyGranted) {
+      if (raw) {
+        return Object.fromEntries(
+          paths.map(path => [path, path in grants && grants[path].granted])
+        )
+      }
+
+      return paths.some(path => grants[path].granted)
     }
 
-    setGrants(path, true)
+    setGrants(paths, true)
 
-    const { data: { granted = false } = {} } = await request('/api/account/access', { params: { path }})
+    const { data } = await request('/api/account/access', { params: { paths }})
 
-    setGrants(path, false, granted)
+    setGrants(paths, false, data?.granted)
 
-    return granted
+    if (raw) {
+      return Object.fromEntries(
+        Object.entries(data?.granted || {}).map(([path, granted]) => [path, granted])
+      )
+    }
+
+    return paths.some(path => data?.granted && (path in data.granted) && data.granted[path])
   }
   const logout = async (notifyServer = true, message = null, success = true, options = {}) => {
     let doNotify = true

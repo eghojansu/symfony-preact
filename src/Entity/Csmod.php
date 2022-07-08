@@ -18,7 +18,7 @@ class Csmod implements AuditableInterface
     private $id;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $name;
+    private $description;
 
     #[ORM\ManyToMany(targetEntity: Csperm::class, inversedBy: 'modules')]
     #[ORM\JoinTable('csmodp')]
@@ -26,15 +26,11 @@ class Csmod implements AuditableInterface
     #[ORM\InverseJoinColumn('perm', 'perm')]
     private $permissions;
 
-    #[ORM\ManyToMany(targetEntity: Csrole::class, mappedBy: 'modules')]
-    private $roles;
-
     use AuditableTrait;
 
     public function __construct()
     {
         $this->permissions = new ArrayCollection();
-        $this->roles = new ArrayCollection();
     }
 
     public function getId(): ?string
@@ -49,14 +45,14 @@ class Csmod implements AuditableInterface
         return $this;
     }
 
-    public function getName(): ?string
+    public function getDescription(): ?string
     {
-        return $this->name;
+        return $this->description;
     }
 
-    public function setName(string $name): self
+    public function setDescription(string $description): self
     {
-        $this->name = $name;
+        $this->description = $description;
 
         return $this;
     }
@@ -81,33 +77,6 @@ class Csmod implements AuditableInterface
     public function removePermission(Csperm $permission): self
     {
         $this->permissions->removeElement($permission);
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Csrole>
-     */
-    public function getRoles(): Collection
-    {
-        return $this->roles;
-    }
-
-    public function addRole(Csrole $role): self
-    {
-        if (!$this->roles->contains($role)) {
-            $this->roles[] = $role;
-            $role->addModule($this);
-        }
-
-        return $this;
-    }
-
-    public function removeRole(Csrole $role): self
-    {
-        if ($this->roles->removeElement($role)) {
-            $role->removeModule($this);
-        }
 
         return $this;
     }

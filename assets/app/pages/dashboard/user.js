@@ -46,6 +46,8 @@ const form = {
   ],
 }
 const table = {
+  access: 'usr',
+  checks: 'access',
   columns: [
     {
       name: 'id',
@@ -67,10 +69,10 @@ const renderContent = tab => (
 )
 
 const EditPage = ({ tab }) => {
-  const { data: { item, url: action } } = tab
+  const { data: { item, url: action }, row: { action: check } } = tab
   const { items, activeId, setActive, handleTabSelect } = useTree(tree => {
     tree.add('Data')
-    tree.add('Access')
+    check.access && tree.add('Access')
   })
 
   return (
@@ -78,9 +80,9 @@ const EditPage = ({ tab }) => {
       <NavTab items={items} activeId={activeId} onSelect={handleTabSelect} />
       <div class="pt-3">
         {
-          ('Data' === activeId && renderCrudContent(tab, endpoint, form))
+          ('data' === activeId && renderCrudContent(tab, endpoint, form))
           || (
-            'Access' === activeId && (
+            'access' === activeId && (
               <AccessForm
                 item={item}
                 action={`${action}/access`}

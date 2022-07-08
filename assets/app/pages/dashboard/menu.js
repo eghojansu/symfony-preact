@@ -1,6 +1,8 @@
-import { useRef, useState, useEffect } from 'preact/hooks'
+import { createContext } from 'preact'
+import { useRef, useState, useEffect, useContext, useMemo } from 'preact/hooks'
 import { withGranted } from '@app/context'
 import { clsx, normalizeMenu } from '@app/lib/common'
+import { useAction } from '@app/lib/table'
 import notify, { confirm } from '@app/lib/notify'
 import useTree from '@app/lib/tree'
 import Panel from '@app/components/panel'
@@ -28,9 +30,15 @@ function MainPage({
       text: 'Account Menu',
     },
   ]
-  const toolbar = {
+  const [menu, menuSet] = useState({})
+  const action = useAction('mnu')
+  const menuRef = useRef({
+    loaded: true,
+    cancel: new AbortController(),
+  })
+  const toolbar = useMemo(() => ({
     groups: [
-      {
+      ...action.withAction('create', {
         text: 'New',
         icon: 'plus-circle',
         variant: 'primary',
@@ -42,14 +50,9 @@ function MainPage({
             })
           },
         },
-      }
+      }, true)
     ]
-  }
-  const [menu, menuSet] = useState({})
-  const menuRef = useRef({
-    loaded: true,
-    cancel: new AbortController(),
-  })
+  }), [action.action.create])
   const {
     items,
     activeId,
@@ -169,6 +172,12 @@ function MainPage({
 
     console.log('Unhandled action ' + id)
   }
+  const contextValue = {
+    groups,
+    action,
+    menu,
+    createActionGroupHandler,
+  }
 
   useEffect(() => {
     loadData()
@@ -180,47 +189,46 @@ function MainPage({
   }, [])
 
   return (
-    <Panel
-      title="Manage Menu"
-      toolbar={toolbar}
-      items={items}
-      activeId={activeId}
-      onTabClose={handleTabClose}
-      onTabSelect={handleTabSelect}>
-      {
-        ('menu' === activeId && (
-          <MainTab
-            groups={groups}
-            menu={menu}
-            createActionGroupHandler={createActionGroupHandler} />
-        ))
-        || (['add', 'edit'].includes(activeItem?.tag) && (
-          <MenuForm key={activeItem.text} tab={activeItem} />
-        ))
-        || null
-      }
-    </Panel>
+    <MenuContext.Provider value={contextValue}>
+      <Panel
+        title="Manage Menu"
+        toolbar={toolbar}
+        items={items}
+        activeId={activeId}
+        onTabClose={handleTabClose}
+        onTabSelect={handleTabSelect}>
+        {
+          ('menu' === activeId && <MainTab />)
+          || (['add', 'edit'].includes(activeItem?.tag) && (
+            <MenuForm key={activeItem.text} tab={activeItem} />
+          ))
+          || null
+        }
+      </Panel>
+    </MenuContext.Provider>
   )
 }
 
 const endpoint = '/api/menu'
 
-const MainTab = ({
-  groups,
-  menu,
-  createActionGroupHandler,
-}) => (
-  <div class="row mt-3">
-    {groups.map(group => (
-      <div key={group.id} class="col">
-        <h3 class="fs-5 border-bottom pb-3 mb-3">{group.text}</h3>
-        {group.id in menu ? (
-          <Tree id={group.id} onAction={createActionGroupHandler(group)} items={menu[group.id]} />
-        ) : <IconSpinner />}
-      </div>
-    ))}
-  </div>
-)
+const MenuContext = createContext()
+const useMenuContext = () => useContext(MenuContext)
+const MainTab = () => {
+  const { groups, menu, createActionGroupHandler } = useMenuContext()
+
+  return (
+    <div class="row mt-3">
+      {groups.map(group => (
+        <div key={group.id} class="col">
+          <h3 class="fs-5 border-bottom pb-3 mb-3">{group.text}</h3>
+          {group.id in menu ? (
+            <Tree id={group.id} onAction={createActionGroupHandler(group)} items={menu[group.id]} />
+          ) : <IconSpinner />}
+        </div>
+      ))}
+    </div>
+  )
+}
 const MenuForm = ({
   tab: {
     close,
@@ -332,6 +340,7 @@ const TreeItem = ({
   last,
   onAction,
 }) => {
+  const { action: { withAction }} = useMenuContext()
   const {
     name: text,
     icon,
@@ -355,31 +364,31 @@ const TreeItem = ({
     {
       size: 'sm',
       items: [
-        {
+        ...withAction('create', {
           id: 'add',
           icon: 'plus-circle',
           variant: 'primary',
-        },
-        {
+        }, true),
+        ...withAction('update', {
           id: 'edit',
           icon: 'pencil',
           variant: 'success',
-        },
-        {
+        }, true),
+        ...withAction('delete', {
           id: 'remove',
           icon: 'trash',
           variant: 'danger',
-        },
-        {
+        }, true),
+        ...withAction('update', {
           id: 'up',
           icon: 'caret-up',
           disabled: pos === 0,
-        },
-        {
+        }, true),
+        ...withAction('update', {
           id: 'down',
           icon: 'caret-down',
           disabled: pos === last,
-        },
+        }, true),
       ]
     },
   ]

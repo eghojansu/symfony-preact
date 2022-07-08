@@ -1,3 +1,4 @@
+export const split = (val, by = ',') => val ? (Array.isArray(val) ? val : val.split(by)) : []
 export const clsa = val => val ? (Array.isArray(val) ? val : [val]) : []
 export const clsr = (...args) => args.reduce((args, val) => {
   if (!val) {

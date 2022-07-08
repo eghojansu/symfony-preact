@@ -8,23 +8,24 @@ db:
         ad:
             name: Administration
             icon: gear
-            roles: admin
             items:
                 adusr:
                     name: Users
                     path: /dashboard/adm/user
                     icon: people
+                    roles: usrview
 
                 admnu:
                     name: Menu
                     path: /dashboard/adm/menu
                     icon: menu-up
+                    roles: mnuview
         tst:
             name: Test
             icon: book
-            roles: admin
             items:
                 tstbk:
                     name: Daftar Buku
                     path: /dashboard/test/buku
                     icon: book
+                    roles: bkview
