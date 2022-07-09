@@ -9,14 +9,14 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 #[Route('/api/data')]
 class ChoiceController extends Controller
 {
-    public function __construct(
-        private Choices $choices,
-    ) {}
-
-    #[Route('/roles', methods: 'GET')]
-    #[IsGranted('ROLE_ADMIN')]
-    public function roles()
+    #[Route('/{choice}', methods: 'GET')]
+    #[IsGranted('ROLE_EDITOR')]
+    public function choice(Choices $choices, string $choice)
     {
-        return $this->api->source($this->choices->roles());
+        if (!$choices->support($choice)) {
+            throw $this->createNotFoundException();
+        }
+
+        return $this->api->source($choices->getChoices($choice));
     }
 }

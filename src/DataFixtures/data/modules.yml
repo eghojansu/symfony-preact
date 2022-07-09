@@ -5,8 +5,6 @@ mnguser:
         usrcreate: Create User
         usrupdate: Update User
         usrdelete: Delete User
-        usrrestore: Restore User
-        usrdestroy: Delete User Permanent
         usraccess: Grant User Access
 
 mngmenu:
@@ -16,8 +14,6 @@ mngmenu:
         mnucreate: Create Menu
         mnuupdate: Update Menu
         mnudelete: Delete Menu
-        mnurestore: Restore Menu
-        mnudestroy: Delete Menu Permanent
 
 mngbuku:
     name: Buku Management
@@ -26,5 +22,3 @@ mngbuku:
         bkcreate: Create Buku
         bkupdate: Update Buku
         bkdelete: Delete Buku
-        bkrestore: Restore Buku
-        bkdestroy: Delete Buku Permanent

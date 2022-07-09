@@ -11,28 +11,36 @@ export const useAction = (access, init, checks, extras, withRowAction) => {
     loaded: true,
   })
   const maps = {
-    actions: [['create', 'C'], ['view', 'R'], ['update', 'U'], ['delete', 'D'], ['restore', 'O'], ['destroy', 'E']],
-    checks: split(checks).map(check => [check]),
-    extras: split(extras),
+    actions: [[`${access}create`, 'create', 'C'], [`${access}view`, 'view', 'R'], [`${access}update`, 'update', 'U'], [`${access}delete`, 'delete', 'D']],
+    actionsRaw: [['restore', 'restore', 'O'], ['destroy', 'destroy', 'E']],
+    checks: split(checks).map(check => [`${access}${check}`, check]),
+    extras: split(extras).map(check => [check, check]),
   }
   const [action, actionSet] = useState({
-    ...Object.fromEntries(maps.actions.map(([action, initial]) => [action, init && init.includes(initial)])),
-    ...Object.fromEntries(maps.checks.map(([granted]) => [granted, false])),
-    ...Object.fromEntries(maps.extras.map(granted => [granted, false])),
+    ...Object.fromEntries(maps.actions.concat(maps.actionsRaw).map(([, action, initial]) => [action, init && init.includes(initial)])),
+    ...Object.fromEntries(maps.checks.concat(maps.extras).map(([granted]) => [granted, false])),
   })
   const rowAction = useMemo(() => withRowAction ? clsr(
-    ...maps.actions.map(([name, initial]) => action[name] && initial),
+    ...maps.actions.concat(maps.actionsRaw).map(([, name, initial]) => action[name] && initial),
   ).join('') : null, [action, withRowAction])
   const checkGrants = async () => {
     const granted = await isGranted(
-      maps.actions.concat(maps.checks).map(([action]) => `${access}${action}`).concat(maps.extras).join(','),
-      true
+      [].concat(
+        maps.actions,
+        maps.actionsRaw,
+        maps.checks,
+        maps.extras,
+      ).map(([action]) => action).join(','),
+      true,
     )
 
     accRef.current.loaded && actionSet(action => ({ ...action, ...Object.fromEntries(
-      maps.actions.concat(maps.checks).map(([action]) => [action, `${access}${action}`]).concat(
-        maps.extras.map(action => [action, action])
-      ).map(([action, access]) => [action, granted && access in granted && granted[access]])
+      [].concat(
+        maps.actions,
+        maps.actionsRaw,
+        maps.checks,
+        maps.extras,
+      ).map(([access, action]) => [action, granted && access in granted && granted[access]])
     ) }))
   }
   const withAction = (name, value, arraize, fallback) => action && action[name] ? (

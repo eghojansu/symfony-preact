@@ -107,32 +107,27 @@ export default ({ children }) => {
       return true
     }
 
-    const paths = split(path)
-    const alreadyGranted = paths.some(path => (path in grants) && !grants[path].granting)
+    const checks = split(path)
+    const paths = checks.filter(path => !(path in grants))
 
-    if (alreadyGranted) {
-      if (raw) {
-        return Object.fromEntries(
-          paths.map(path => [path, path in grants && grants[path].granted])
-        )
-      }
+    if (paths.length === 0) {
+      const result = checks.map(path => [path, path in grants && grants[path].granted])
 
-      return paths.some(path => grants[path].granted)
+      return raw ? Object.fromEntries(result) : result.some(([, granted]) => granted)
     }
 
     setGrants(paths, true)
 
     const { data } = await request('/api/account/access', { params: { paths }})
+    const result = checks.map(path => [path, (
+      data?.granted && path in data.granted ? data.granted[path] : (
+        path in grants && grants[path].granted
+      )
+    )])
 
     setGrants(paths, false, data?.granted)
 
-    if (raw) {
-      return Object.fromEntries(
-        Object.entries(data?.granted || {}).map(([path, granted]) => [path, granted])
-      )
-    }
-
-    return paths.some(path => data?.granted && (path in data.granted) && data.granted[path])
+    return raw ? Object.fromEntries(result) : result.some(([, granted]) => granted)
   }
   const logout = async (notifyServer = true, message = null, success = true, options = {}) => {
     let doNotify = true

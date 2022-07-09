@@ -2,6 +2,8 @@
 
 namespace App\Extension;
 
+use Doctrine\ORM\QueryBuilder;
+
 class Utils
 {
     public static function className(string $class): string
@@ -114,5 +116,44 @@ class Utils
         }
 
         return true;
+    }
+
+    public static function applyRowFilter(
+        QueryBuilder $qb,
+        array $rows,
+        string $prefix = 'a',
+    ): void {
+        $pos = 1;
+        $wPrefix = static fn (string $field) => (
+            false === strpos($field, '.') ? $prefix . '.' . $field : $field
+        );
+
+        $qb->where(
+            $qb->expr()->andX(
+                ...Utils::map(
+                    $rows,
+                    static function (array $row) use ($qb, $wPrefix, &$pos) {
+                        list($value, $fields, $nullable, $call) = $row + array(
+                            2 => true, null
+                        );
+
+                        $qb->expr()->orX(
+                            ...($nullable ? array($qb->expr()->isNull('?' . $pos)) : array()),
+                            ...Utils::map(
+                                Utils::split($fields),
+                                static function (string $field) use ($qb, $call, $wPrefix, &$pos)  {
+                                    match ($call) {
+                                        default => $qb->expr()->like($wPrefix($field), '?' . $pos),
+                                    };
+                                },
+                                false,
+                            ),
+                        );
+                        $qb->setParameter($pos++, $value);
+                    },
+                    false,
+                ),
+            ),
+        );
     }
 }

@@ -221,7 +221,7 @@ export const FormGroup = ({
   name = 'control',
   type = 'text',
   width = 4,
-  breakpoint,
+  breakpoint = 'md',
   label,
   placeholder,
   rootClass,

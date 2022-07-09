@@ -10,10 +10,10 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/user')]
-#[IsGranted('usrview')]
 class UserController extends Controller
 {
     #[Route('', methods: 'GET')]
+    #[IsGranted('usrview')]
     public function home()
     {
         return $this->api->handlePagination(Csuser::class, array(
@@ -40,15 +40,14 @@ class UserController extends Controller
         ));
     }
 
-    #[Route('/{user}', methods: 'DELETE')]
+    #[Route('/{user}', methods: 'DELETE', defaults: array('_destroy' => true))]
     #[IsGranted('usrdelete')]
     public function delete(Csuser $user)
     {
         return $this->api->handleRemove($user, 'usrdestroy');
     }
 
-    #[Route('/{user}/restore', methods: 'PATCH')]
-    #[IsGranted('usrrestore')]
+    #[Route('/{user}/restore', methods: 'PATCH', defaults: array('_restore' => true))]
     public function restore(Csuser $user)
     {
         return $this->api->handleRestore($user);

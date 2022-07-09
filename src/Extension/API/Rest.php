@@ -16,7 +16,6 @@ use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class Rest
 {
@@ -129,12 +128,11 @@ class Rest
 
     public function handleRemove(
         object $entity,
-        string $destroyRole = null,
         string|array|bool $action = null,
         mixed $data = null,
         array $headers = null,
     ): JsonResponse {
-        $this->remove($entity, $destroyRole);
+        $this->remove($entity);
 
         return $this->removed($action, $data, $headers);
     }
@@ -221,17 +219,8 @@ class Rest
         $this->em->flush();
     }
 
-    public function remove(object $entity, string $destroyRole = null): void
+    public function remove(object $entity): void
     {
-        if (
-            $entity instanceof AuditableInterface
-            && $entity->getDeletedAt()
-            && $destroyRole
-            && !$this->security->isGranted($destroyRole)
-        ) {
-            throw $this->createAccessDeniedException();
-        }
-
         $this->em->remove($entity);
         $this->em->flush();
     }
@@ -305,10 +294,5 @@ class Rest
         ;
 
         return compact('items', 'page', 'size', 'next', 'prev', 'total', 'pages');
-    }
-
-    private function createAccessDeniedException(): AccessDeniedHttpException
-    {
-        return new AccessDeniedHttpException();
     }
 }

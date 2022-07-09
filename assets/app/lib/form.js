@@ -250,7 +250,7 @@ export const useFormAuto = setup => {
   const cancel = () => formRef.current.cancel.abort()
   const loadOptions = async () => {
     const fetchItems = async url => {
-      if (url in cache) {
+      if (cache && url in cache) {
         return cache[url]
       }
 
