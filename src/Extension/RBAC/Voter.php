@@ -26,7 +26,11 @@ class Voter extends BaseVoter
 
     public function supportsAttribute(string $attribute): bool
     {
-        return $this->permissions[$attribute] ?? ($this->permissions[$attribute] = !!$this->permRepo->find($attribute));
+        return $this->permissions[$attribute] ?? (
+            $this->permissions[$attribute] = (
+                !!$this->permRepo->find($attribute)
+            )
+        );
     }
 
     protected function supports(string $attribute, mixed $subject): bool

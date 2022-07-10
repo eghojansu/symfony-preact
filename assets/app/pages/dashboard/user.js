@@ -46,8 +46,7 @@ const form = {
   ],
 }
 const table = {
-  access: 'usr',
-  checks: 'access',
+  access: true,
   columns: [
     {
       name: 'id',
@@ -69,10 +68,10 @@ const renderContent = tab => (
 )
 
 const EditPage = ({ tab }) => {
-  const { data: { item, url: action }, row: { action: check } } = tab
+  const { data: { item, url: action } } = tab
   const { items, activeId, setActive, handleTabSelect } = useTree(tree => {
     tree.add('Data')
-    check.access && tree.add('Access')
+    tree.add('Access')
   })
 
   return (

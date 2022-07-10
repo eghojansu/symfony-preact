@@ -173,6 +173,10 @@ class Csuser implements UserInterface, PasswordAuthenticatedUserInterface, Audit
     {
         $this->roles = $roles;
 
+        if ($roles && ($found = array_search('ROLE_USER', $roles))) {
+            unset($roles[$found]);
+        }
+
         return $this;
     }
 

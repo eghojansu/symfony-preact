@@ -10,37 +10,27 @@ export const useAction = (access, init, checks, extras, withRowAction) => {
     loading: null,
     loaded: true,
   })
-  const maps = {
-    actions: [[`${access}create`, 'create', 'C'], [`${access}view`, 'view', 'R'], [`${access}update`, 'update', 'U'], [`${access}delete`, 'delete', 'D']],
-    actionsRaw: [['restore', 'restore', 'O'], ['destroy', 'destroy', 'E']],
-    checks: split(checks).map(check => [`${access}${check}`, check]),
-    extras: split(extras).map(check => [check, check]),
-  }
+  const prefix = access && 'string' === typeof access ? access : ''
+  const all = [].concat(
+    [[`${prefix}create`, 'create', 'C'], [`${prefix}view`, 'view', 'R'], [`${prefix}update`, 'update', 'U'], [`${prefix}delete`, 'delete', 'D']],
+    [['restore', 'restore', 'O'], ['destroy', 'destroy', 'E']],
+    split(checks).map(check => [`${prefix}${check}`, check, false]),
+    split(extras).map(check => [check, check, false]),
+  )
   const [action, actionSet] = useState({
-    ...Object.fromEntries(maps.actions.concat(maps.actionsRaw).map(([, action, initial]) => [action, init && init.includes(initial)])),
-    ...Object.fromEntries(maps.checks.concat(maps.extras).map(([granted]) => [granted, false])),
+    ...Object.fromEntries(all.map(([, action, initial]) => [action, initial && init && init.includes(initial)])),
   })
   const rowAction = useMemo(() => withRowAction ? clsr(
-    ...maps.actions.concat(maps.actionsRaw).map(([, name, initial]) => action[name] && initial),
+    ...all.map(([, name, initial]) => action[name] && initial),
   ).join('') : null, [action, withRowAction])
   const checkGrants = async () => {
     const granted = await isGranted(
-      [].concat(
-        maps.actions,
-        maps.actionsRaw,
-        maps.checks,
-        maps.extras,
-      ).map(([action]) => action).join(','),
+      all.map(([action]) => action).join(','),
       true,
     )
 
     accRef.current.loaded && actionSet(action => ({ ...action, ...Object.fromEntries(
-      [].concat(
-        maps.actions,
-        maps.actionsRaw,
-        maps.checks,
-        maps.extras,
-      ).map(([access, action]) => [action, granted && access in granted && granted[access]])
+      all.map(([access, action]) => [action, granted && access in granted && granted[access]])
     ) }))
   }
   const withAction = (name, value, arraize, fallback) => action && action[name] ? (
@@ -48,7 +38,7 @@ export const useAction = (access, init, checks, extras, withRowAction) => {
   ) : (arraize && !fallback ? [] : fallback)
 
   useEffect(() => {
-    (access || extras) &&  checkGrants()
+    (access || checks || extras) && checkGrants()
 
     return () => {
       accRef.current.loaded = false

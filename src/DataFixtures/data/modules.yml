@@ -1,20 +1,3 @@
-mnguser:
-    name: User Management
-    permissions:
-        usrview: List User
-        usrcreate: Create User
-        usrupdate: Update User
-        usrdelete: Delete User
-        usraccess: Grant User Access
-
-mngmenu:
-    name: Menu Management
-    permissions:
-        mnuview: List Menu
-        mnucreate: Create Menu
-        mnuupdate: Update Menu
-        mnudelete: Delete Menu
-
 mngbuku:
     name: Buku Management
     permissions:

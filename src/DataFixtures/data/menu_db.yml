@@ -13,13 +13,19 @@ db:
                     name: Users
                     path: /dashboard/adm/user
                     icon: people
-                    roles: usrview
+                    roles: ROLE_ADMIN
+
+                adauth:
+                    name: Authorization
+                    path: /dashboard/adm/authorization
+                    icon: key
+                    roles: ROLE_ADMIN
 
                 admnu:
                     name: Menu
                     path: /dashboard/adm/menu
                     icon: menu-up
-                    roles: mnuview
+                    roles: ROLE_ROOT
         tst:
             name: Test
             icon: book

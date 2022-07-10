@@ -12,6 +12,7 @@ export default withUser(Pages)
 const AccountPage = lazy(() => import('./account'))
 const UserPage = lazy(() => import('./user'))
 const MenuPage = lazy(() => import('./menu'))
+const AuthPage = lazy(() => import('./role'))
 const BukuPage = lazy(() => import('./buku'))
 
 function Pages({
@@ -35,6 +36,7 @@ function Pages({
             <AccountPage path={`${prefix}/account/:rest*`} />
             <UserPage path={`${prefix}/adm/user`} />
             <MenuPage path={`${prefix}/adm/menu`} />
+            <AuthPage path={`${prefix}/adm/authorization`} />
             <BukuPage path={`${prefix}/test/buku`} />
             <ErrorPage default />
           </Router>

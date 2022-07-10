@@ -2,6 +2,7 @@ import { clsx, caseTitle } from '../lib/common'
 import { IconLoading } from './visual'
 import { Toolbar } from './button'
 import Pagination, { PaginationInfo, PaginationSizer } from './pagination'
+import { useMemo } from 'preact/hooks'
 
 export default Table
 
@@ -155,12 +156,16 @@ function Table ({
   onRowAction,
   action,
 }) {
-  const viewable = rowAction && rowAction.includes('R')
-  const editable = rowAction && rowAction.includes('U')
-  const removable = rowAction && rowAction.includes('D')
-  const restorable = rowAction && rowAction.includes('O')
-  const destroyable = rowAction && rowAction.includes('E')
-  const hasRowActions = (viewable || editable || removable || restorable)
+  const act = useMemo(() => ({
+    viewable: rowAction && rowAction.includes('R'),
+    editable: rowAction && rowAction.includes('U'),
+    removable: rowAction && rowAction.includes('D'),
+    restorable: rowAction && rowAction.includes('O'),
+    destroyable: rowAction && rowAction.includes('E'),
+  }), [rowAction])
+  const hasRowActions = useMemo(() => (
+    act.viewable || act.editable || act.removable || act.restorable
+  ), [act])
   const headers = columns.reduce((headers, column) => {
     const id = `row-${column.rowId || 1}`
     const header = headers.find(header => header.id === id) || { id, columns: [] }
@@ -203,22 +208,22 @@ function Table ({
         label: "Row actions",
         size: 'sm',
         items: [
-          ...(viewable && !isDeleted ? [{
+          ...(act.viewable && !isDeleted ? [{
             id: 'view',
             icon: 'eye',
             variant: 'info',
           }] : []),
-          ...(editable && !isDeleted ? [{
+          ...(act.editable && !isDeleted ? [{
             id: 'edit',
             icon: 'pencil',
             variant: 'success',
           }] : []),
-          ...(restorable && isDeleted ? [{
+          ...(act.restorable && isDeleted ? [{
             id: 'restore',
             icon: 'arrow-counterclockwise',
             variant: 'warning',
           }] : []),
-          ...(removable && (!isDeleted || destroyable) ? [{
+          ...(act.removable && (!isDeleted || act.destroyable) ? [{
             id: 'remove',
             icon: 'trash',
             variant: 'danger',

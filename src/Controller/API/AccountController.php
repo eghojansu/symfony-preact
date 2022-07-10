@@ -56,6 +56,7 @@ class AccountController extends Controller
     public function access(Menu $menu)
     {
         $paths = $this->request->get('paths');
+        $admin = $this->isGranted('ROLE_ADMIN');
         $granted = array_reduce(
             Utils::split($paths),
             fn (array $granted, string $path) => (
@@ -63,8 +64,9 @@ class AccountController extends Controller
                     $path => match(true) {
                         str_starts_with($path, '/') => $menu->isGranted($path),
                         default => (
-                            $this->isGranted('ROLE_' . strtoupper($path)) ||
-                            $this->isGranted($path)
+                            $admin
+                            || $this->isGranted($path)
+                            || $this->isGranted('ROLE_' . strtoupper($path))
                         ),
                     },
                 )

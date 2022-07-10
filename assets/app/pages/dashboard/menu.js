@@ -31,7 +31,7 @@ function MainPage({
     },
   ]
   const [menu, menuSet] = useState({})
-  const action = useAction('mnu')
+  const action = useAction(true)
   const menuRef = useRef({
     loaded: true,
     cancel: new AbortController(),

@@ -8,6 +8,7 @@ use App\Repository\CspermRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Ignore;
 
 #[ORM\Entity(repositoryClass: CspermRepository::class)]
 class Csperm implements AuditableInterface
@@ -21,9 +22,11 @@ class Csperm implements AuditableInterface
     private $description;
 
     #[ORM\ManyToMany(targetEntity: Csmod::class, mappedBy: 'permissions')]
+    #[Ignore]
     private $modules;
 
     #[ORM\ManyToMany(targetEntity: Csrole::class, mappedBy: 'permissions')]
+    #[Ignore]
     private $roles;
 
     use AuditableTrait;

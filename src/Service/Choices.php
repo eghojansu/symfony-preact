@@ -70,6 +70,8 @@ class Choices
             $roles['Root'] = 'ROLE_ROOT';
         }
 
+        $roles['User'] = 'ROLE_USER';
+
         return $roles;
     }
 }
