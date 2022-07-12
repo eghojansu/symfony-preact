@@ -1,3 +1,5 @@
+import { useRef, useEffect } from 'preact/hooks'
+import { useAppContext } from '../context'
 import { caseKebab, caseTitle, clsx, random } from '../lib/common'
 import { isCheck, isChoice } from '../lib/form'
 import { Alert } from './dialog'
@@ -22,13 +24,22 @@ export const FormControl = ({
   readonly,
   plain,
   id: originalId,
+  withSource = () => ({}),
+  source,
   items,
   extra,
   renderAutocomplete,
-  addons = [],
+  addons: originalAddons,
   type = 'text',
   ...props
 }) => {
+  const { request, cache } = useAppContext()
+  const formRef = useRef({
+    loading: null,
+    loaded: true,
+    items: [],
+    cancel: new AbortController(),
+  })
   const check = isCheck(type)
   const choice = isChoice(type)
   const text = label || props.placeholder || caseTitle(name)
@@ -37,58 +48,81 @@ export const FormControl = ({
   const feedbackElement = message ? (
     <div class={clsx(valid && 'valid-feedback', invalid && 'invalid-feedback')}>{message}</div>
   ) : null
+  const loadOptions = async () => {
+    if (cache && source in cache) {
 
-  if ('password' === type) {
-    if (generate) {
-      addons.push({
-        type: 'button',
-        icon: 'key',
-        tabindex: -1,
-        variant: 'warning',
-        onClick: ({ event }) => {
-          const $input = event.target.closest('.input-group').querySelector('.form-control')
-
-          $input.value = random(8)
-          $input.dispatchEvent(new Event('input', { bubbles: true }))
-        },
-      })
-    }
-
-    if (view) {
-      addons.push({
-        type: 'button',
-        icon: 'eye',
-        tabindex: -1,
-        variant: 'info',
-        onClick: ({ event }) => {
-          const $input = event.target.closest('.input-group').querySelector('.form-control')
-          const $icon = event.target.closest('[type=button]').querySelector('i[class^="bi-"]')
-          const plain = $icon.classList.contains('bi-eye-slash')
-
-          if (plain) {
-            $input.type = 'password'
-            $icon.classList.add('bi-eye')
-            $icon.classList.remove('bi-eye-slash')
-          } else {
-            $input.type = 'text'
-            $icon.classList.add('bi-eye-slash')
-            $icon.classList.remove('bi-eye')
-          }
-        },
-      })
     }
   }
+  let control = null
+  const addons = [...(originalAddons || [])]
+  const addonsElement = (() => {
+    if ('password' === type) {
+      if (generate) {
+        addons.push({
+          type: 'button',
+          icon: 'key',
+          tabindex: -1,
+          variant: 'warning',
+          onClick: ({ event }) => {
+            const $input = event.target.closest('.input-group').querySelector('.form-control')
 
-  const addonsElement = (
-    <>
-      {addons.map((addon, idx) => (
-        <FormControl key={addon.id || idx} {...{
-          disabled,
-          ...addon,
-        }} />
-      ))}
-    </>
-  )
+            $input.value = random(8)
+            $input.dispatchEvent(new Event('input', { bubbles: true }))
+          },
+        })
+      }
+
+      if (view) {
+        addons.push({
+          type: 'button',
+          icon: 'eye',
+          tabindex: -1,
+          variant: 'info',
+          onClick: ({ event }) => {
+            const $input = event.target.closest('.input-group').querySelector('.form-control')
+            const $icon = event.target.closest('[type=button]').querySelector('i[class^="bi-"]')
+            const plain = $icon.classList.contains('bi-eye-slash')
+
+            if (plain) {
+              $input.type = 'password'
+              $icon.classList.add('bi-eye')
+              $icon.classList.remove('bi-eye-slash')
+            } else {
+              $input.type = 'text'
+              $icon.classList.add('bi-eye-slash')
+              $icon.classList.remove('bi-eye')
+            }
+          },
+        })
+      }
+    }
+
+    return (
+      <>
+        {addons.map((addon, idx) => (
+          <FormControl key={addon.id || idx} {...{
+            disabled,
+            ...addon,
+          }} />
+        ))}
+      </>
+    )
+  })()
+
+  useEffect(() => {
+    source && loadOptions()
+
+    return () => {
+      formRef.current.loaded = false
+
+      if (formRef.current.loading) {
+        formRef.current.cancel.abort()
+        clearTimeout(formRef.current.loading)
+
+        formRef.current.loading = null
+      }
+    }
+  }, [])
 
   if ('addon' === type) {
     return <span class={clsx('input-group-text', clsa)} {...props}>{text}</span>
@@ -102,8 +136,6 @@ export const FormControl = ({
       class: clsa,
     }} />
   }
-
-  let control = null
 
   if (check) {
     control = (

@@ -186,12 +186,12 @@ export const useFormAuto = setup => {
       update.disabled = true
     }
 
-    if (source && !(name in formRef.current.fetches)) {
-      formRef.current.fetches[name] = {
-        source,
-        fetched: false,
-      }
-    }
+    // if (source && !(name in formRef.current.fetches)) {
+    //   formRef.current.fetches[name] = {
+    //     source,
+    //     fetched: false,
+    //   }
+    // }
 
     if (isCheck(type)) {
       update.onClick = e => {
